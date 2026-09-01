@@ -48,6 +48,10 @@ Every flight price display must include:
 
 > "Indicative prices, subject to change. Verify at the time of purchase."
 
+Every response that presents a destination must also include (ADR-033 — WAYREEL.md Section 17):
+
+> "Visa requirements vary by nationality — always confirm with your country's consulate before booking."
+
 ## 6. Security Tools Evaluated and Decisions
 
 | Tool                                              | Status                                    | Reason                                                                                                                                                                                                                                                                    |

@@ -1,6 +1,9 @@
 // src/domain/schemas.ts
-// Source of truth: WAYREEL.md Section 6.2 (Zod Schemas). Do not add fields
-// or validation rules not specified there — see CLAUDE.md "Before any change".
+// Base schemas: WAYREEL.md Section 6.2 (Zod Schemas). origin_iata's format
+// check (3 uppercase letters) was added per ADR-033 (WAYREEL.md Section 17)
+// to validate IATA codes the LLM extracts from its own knowledge for cities
+// outside CITY_TO_IATA (src/domain/airport-codes.ts). Do not add other
+// fields/rules not specified there — see CLAUDE.md "Before any change".
 
 import { z } from "zod";
 
@@ -10,7 +13,10 @@ export const TravelIntentSchema = z.object({
   budget_amount: z.number().optional(),
   budget_currency: z.string().optional(),
   origin_city: z.string().optional(),
-  origin_iata: z.string().length(3).optional(),
+  origin_iata: z
+    .string()
+    .regex(/^[A-Z]{3}$/)
+    .optional(),
   passengers: z.number().min(1).max(9).optional(),
   dates_flexibility: z.enum(["fixed", "flexible"]).optional(),
   departure_date: z

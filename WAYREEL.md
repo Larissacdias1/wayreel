@@ -409,6 +409,11 @@ export const UserMessageSchema = z.object({
 
 ```typescript
 // src/domain/airport-codes.ts
+// Base table below; expanded per ADR-033 to give representative global
+// coverage — this table is the deterministic fast path, cities not listed
+// here fall back to the LLM's own IATA knowledge in extractIntent
+// (docs/PROMPTS.md), validated by a 3-letter uppercase regex in
+// TravelIntentSchema (src/domain/schemas.ts).
 export const CITY_TO_IATA: Record<string, string> = {
   // Brazil
   "sao paulo": "GRU",
@@ -444,7 +449,7 @@ export const CITY_TO_IATA: Record<string, string> = {
   colombo: "CMB",
   // Taiwan
   taipei: "TPE",
-  // Others
+  // Europe (others)
   "nova york": "JFK",
   "new york": "JFK",
   londres: "LHR",
@@ -456,6 +461,40 @@ export const CITY_TO_IATA: Record<string, string> = {
   berlin: "BER",
   amsterda: "AMS",
   amsterdam: "AMS",
+  // North America (ADR-033)
+  "los angeles": "LAX",
+  "cidade do mexico": "MEX",
+  "mexico city": "MEX",
+  toronto: "YYZ",
+  chicago: "ORD",
+  // Asia (ADR-033)
+  toquio: "HND",
+  tokyo: "HND",
+  pequim: "PEK",
+  beijing: "PEK",
+  xangai: "PVG",
+  shanghai: "PVG",
+  seul: "ICN",
+  seoul: "ICN",
+  singapura: "SIN",
+  singapore: "SIN",
+  bangkok: "BKK",
+  dubai: "DXB",
+  bombaim: "BOM",
+  mumbai: "BOM",
+  "nova deli": "DEL",
+  delhi: "DEL",
+  "hong kong": "HKG",
+  // Oceania (ADR-033)
+  sydney: "SYD",
+  melbourne: "MEL",
+  auckland: "AKL",
+  // Africa (ADR-033)
+  joanesburgo: "JNB",
+  johannesburg: "JNB",
+  cairo: "CAI",
+  nairobi: "NBO",
+  lagos: "LOS",
 };
 
 export function cityToIata(city: string): string | null {
@@ -464,7 +503,7 @@ export function cityToIata(city: string): string | null {
 }
 ```
 
-Fallback: If the city is not in the table, the agent asks: "What is the nearest airport?" or suggests the main ones in the country.
+Fallback: If the city is not in the table, extractIntent falls back to the LLM's own IATA knowledge, validated by a 3-letter uppercase regex before being accepted (ADR-033) — the table remains the deterministic fast path, the LLM is only a fallback for the long tail.
 Future scale: Replace with a geocoding API (Google Places, GeoNames) when justified.
 
 ### 6.4 Robust JSON Parser (Retry)
@@ -567,6 +606,8 @@ START → extractIntent → validateIntent → clarify (if needed) → retrieveC
 | searchFlights         | FlightSearchInput                            | FlightSearchResult               | Calls the MCP, not the API directly                      |
 | validateFlightResults | FlightSearchResult                           | Normalized result                | Zod + tier classification                                |
 | buildResponse         | All of the data above                        | Final message                    | Formats the cinematic response                           |
+
+Note (ADR-033): whenever `buildResponse` presents a destination, it must include the visa disclaimer from `docs/SECURITY.md` Section 5, the same mechanism already used for the flight price disclaimer — not a new feature, just a second boilerplate line alongside the existing one.
 
 ### 8.3 Conditional transitions
 
@@ -1001,6 +1042,7 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 | **ADR-029**                                          | **Styling via CSS custom properties (src/ui/tokens.css), not Tailwind**                                                                                                               | **Frozen** |
 | **ADR-030**                                          | **Responsiveness: single breakpoint at 768px, flight cards stack on mobile, no flythrough quality reduction per device, every interaction needs a touch equivalent (not just hover)** | **Frozen** |
 | **ADR-031**                                          | **Repository content is English-only; agent conversation supports PT/EN/ES via system prompt, no UI i18n or RAG duplication in MVP**                                                  | **Frozen** |
+| **ADR-033**                                          | **Product is global, not Brazil-specific — city coverage expanded with LLM fallback; visa data becomes a generic per-nationality disclaimer, not fixed per-destination facts**        | **Frozen** |
 
 ### 17.1 Revision Log
 
@@ -1053,6 +1095,12 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 - Problem: repository content had been written in Portuguese despite the project being global/portfolio-facing; separately, Wayreel's real target users may write in Portuguese, English, or Spanish.
 - Alternatives evaluated: full UI internationalization + RAG content curated in 3 languages (rejected — disproportionate effort for a solo MVP, contradicts the simplicity priority, triples the destination curation workload which is already the project's real bottleneck); keeping both documentation and product English-only (rejected — loses a genuinely low-cost differentiator, since the LLM agent already understands and generates fluent PT/EN/ES without any extra engineering).
 - Decision: all repository content (code, comments, documentation, commit messages, GitHub issues) is English-only from this point. The agent's conversation layer supports Portuguese, English, and Spanish through a single system prompt instruction (respond in the user's language, default English if ambiguous) — no UI translation, no RAG duplication in the MVP.
+
+**ADR-033 — 2026-09-01**
+
+- Problem: initial implementation (CITY_TO_IATA table, destination visa fields) assumed a Brazilian traveler, but the product is meant to be global.
+- Alternatives evaluated: building a full nationality × destination visa database (rejected — scope explosion disproportionate to a solo MVP, visa data changes over time and needs constant upkeep); keeping the static table as the only city resolution mechanism (rejected — no static table can cover global input, and expanding it indefinitely doesn't scale).
+- Decision: (1) CITY_TO_IATA expanded to include major cities across all continents, not just Brazil/Europe. When a city isn't in the table, extractIntent falls back to the LLM's own knowledge of IATA codes, validated by a 3-letter uppercase regex before being accepted — the table remains the deterministic fast path, the LLM is only a fallback for the long tail. (2) Visa information becomes a generic disclaimer ("requirements vary by nationality — confirm with your consulate"), not a fixed fact per destination, since visa rules depend on the traveler's passport, not the destination alone.
 
 ---
 

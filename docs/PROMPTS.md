@@ -52,7 +52,9 @@ Extract:
 - budget_amount: number | null
 - budget_currency: string | null
 - origin_city: string | null
-- origin_iata: string | null (3-letter IATA code, if known)
+- origin_iata: string | null (3-letter IATA code. If the origin city is not in a
+  known list, extract the IATA code from your own knowledge; return null if
+  you are not sure — never invent a code.)
 - passengers: number (default 1)
 - dates_flexibility: "fixed" | "flexible" | null
 - departure_date: string | null (YYYY-MM-DD)
