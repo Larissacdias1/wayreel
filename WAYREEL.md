@@ -665,10 +665,10 @@ interface AgentState {
 
 ### 9.2 Embedding Strategy
 
-- Model: Google Gemini embeddings (same API key as the LLM)
+- Model: Google Gemini embeddings, `gemini-embedding-001` (same API key as the LLM)
 - Text to embed: name + ". " + vibe_description + " Tags: " + tags.join(", ") + ". Best for: " + best_for.join(", ")
 - Storage: SQLite (destinations table with an embedding column as a float32 vector BLOB)
-- Retrieval: manual in-memory cosine similarity (5 destinations x 1536 dims = trivial computation)
+- Retrieval: manual in-memory cosine similarity (5 destinations x 3072 dims (gemini-embedding-001, confirmed live — see ADR-034) = trivial computation)
 - Metadata: JSON string with the full Destination object
 
 Note: With 5 destinations, we don't need a vector index. When scaling to 50+ destinations, we migrate to Postgres + pgvector — same SQL schema, a 2-line change.
@@ -1043,6 +1043,7 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 | **ADR-030**                                          | **Responsiveness: single breakpoint at 768px, flight cards stack on mobile, no flythrough quality reduction per device, every interaction needs a touch equivalent (not just hover)** | **Frozen** |
 | **ADR-031**                                          | **Repository content is English-only; agent conversation supports PT/EN/ES via system prompt, no UI i18n or RAG duplication in MVP**                                                  | **Frozen** |
 | **ADR-033**                                          | **Product is global, not Brazil-specific — city coverage expanded with LLM fallback; visa data becomes a generic per-nationality disclaimer, not fixed per-destination facts**        | **Frozen** |
+| **ADR-034**                                          | **Embedding model: gemini-embedding-001, default 3072 dimensions (not the placeholder 1536 in the original spec)**                                                                    | **Frozen** |
 
 ### 17.1 Revision Log
 
@@ -1101,6 +1102,12 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 - Problem: initial implementation (CITY_TO_IATA table, destination visa fields) assumed a Brazilian traveler, but the product is meant to be global.
 - Alternatives evaluated: building a full nationality × destination visa database (rejected — scope explosion disproportionate to a solo MVP, visa data changes over time and needs constant upkeep); keeping the static table as the only city resolution mechanism (rejected — no static table can cover global input, and expanding it indefinitely doesn't scale).
 - Decision: (1) CITY_TO_IATA expanded to include major cities across all continents, not just Brazil/Europe. When a city isn't in the table, extractIntent falls back to the LLM's own knowledge of IATA codes, validated by a 3-letter uppercase regex before being accepted — the table remains the deterministic fast path, the LLM is only a fallback for the long tail. (2) Visa information becomes a generic disclaimer ("requirements vary by nationality — confirm with your consulate"), not a fixed fact per destination, since visa rules depend on the traveler's passport, not the destination alone.
+
+**ADR-034 — 2026-09-01**
+
+- Problem: WAYREEL.md Section 9.2 referenced "1536 dims" as an example of trivial computation scale, with no model named and no real justification — likely inherited from a different provider's older embedding model (e.g. OpenAI text-embedding-ada-002) never verified against the actual model in use.
+- Alternatives evaluated: requesting output_dimensionality=1536 from gemini-embedding-001 to match the original placeholder (rejected — no documented reason ever existed for 1536 specifically; forcing it now would just replace one arbitrary number with another, adding an unnecessary API parameter for no real benefit).
+- Decision: use gemini-embedding-001's default output (3072 dimensions), confirmed via live API call during issue #105. Cosine similarity over 5 destinations remains trivial computation regardless of dimension count (5 x 3072 is still negligible), so this doesn't affect the "no vector index needed" reasoning in Section 9.2 — only the specific number was wrong.
 
 ---
 
