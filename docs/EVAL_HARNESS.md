@@ -11,7 +11,7 @@ Extracted from `WAYREEL.md` Section 14.1-14.3 (ADR-027). Normative source of tru
      /--------\
     / Integration\  Jest + supertest — API routes, MCP contract, RAG retriever
    /--------------\
-  /     Unit       \ Jest — pure logic (classifyTier, cityToIata, safeJsonParse)
+  /     Unit       \ Jest — pure logic (classifyTier, cityToIata, safeJsonParse, domain/schemas)
  /------------------\
 /    Eval Harness    \ Jest + JSON — quality of LLM responses
 ----------------------
