@@ -1,0 +1,66 @@
+{
+  "name": "wayreel",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Booking cinematografico guiado por inteligencia artificial",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "server": "tsx watch src/api/index.ts",
+    "lint": "prettier --check .",
+    "lint:fix": "prettier --write .",
+    "typecheck": "tsc --noEmit",
+    "eval": "tsx src/eval/runner.ts",
+    "test:e2e": "playwright test",
+    "test:e2e:ci": "playwright test --workers=2",
+    "test:e2e:debug": "playwright test --debug",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@langchain/langgraph": "^1.4.13",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "better-sqlite3": "^13.0.3",
+    "express": "^5.2.1",
+    "framer-motion": "^13.1.1",
+    "gsap": "^3.15.0",
+    "maplibre-gl": "^6.6.0",
+    "pino": "^10.3.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "zod": "^4.5.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.1",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.5",
+    "@vitejs/plugin-react": "^6.1.1",
+    "husky": "^9.1.7",
+    "jest": "^30.5.0",
+    "lint-staged": "^17.4.1",
+    "prettier": "^3.9.6",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "vite": "^8.2.2"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,json,md}": [
+      "prettier --write"
+    ]
+  },
+  "allowScripts": {
+    "@parcel/watcher@2.6.0": true,
+    "better-sqlite3@13.0.3": true,
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true,
+    "fsevents@2.3.2": true,
+    "fsevents@2.3.3": true
+  }
+}

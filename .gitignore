@@ -1,0 +1,25 @@
+node_modules/
+dist/
+build/
+.env
+*.local
+
+# SQLite (local RAG, Section 9.2)
+*.sqlite
+*.sqlite3
+
+# Playwright
+/test-results/
+/playwright-report/
+/playwright/.cache/
+
+# Eval reports
+eval-report.json
+eval-report.md
+
+.DS_Store
+
+docs/visual-references/
+
+# Audit log for the Claude Code hooks (ADR-025)
+.claude/audit.log

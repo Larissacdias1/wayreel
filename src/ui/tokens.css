@@ -1,0 +1,45 @@
+/* src/ui/tokens.css — gerado a partir de docs/DESIGN_TOKENS.md, ADR-028. Não editar valores aqui sem atualizar o .md primeiro. */
+:root {
+  /* Cor */
+  --bg-base: #14100c;
+  --bg-surface: #1f1913;
+  --text-primary: #f5efe6;
+  --text-secondary: #a89a8a;
+  --accent: #ffb37a;
+  --accent-text: #14100c;
+
+  /* Tipografia */
+  --font-display: "Fraunces", serif;
+  --font-body: "Inter", sans-serif;
+  --font-mono: "DM Mono", monospace;
+
+  --text-xl: 80px;
+  --text-lg: 48px;
+  --text-md: 32px;
+  --text-sm: 20px;
+  --text-xs: 16px;
+  --text-2xs: 14px;
+
+  /* Espaçamento (escala 8pt) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 16px;
+  --space-4: 24px;
+  --space-5: 32px;
+  --space-6: 48px;
+  --space-7: 64px;
+  --space-8: 96px;
+
+  /* Motion (fora do flythrough — Seção 11.1 tem timing próprio) */
+  --motion-fast: 200ms;
+  --motion-base: 400ms;
+  --motion-slow: 800ms;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --text-xl: 44px;
+    --text-lg: 26px;
+    --text-md: 18px;
+  }
+}
