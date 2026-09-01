@@ -770,7 +770,7 @@ The MVP's RAG has 5 destinations (Section 9.1: Setenil, Mardin, Sigiriya, Chefch
 Normative structure (one file per destination, `src/cinematic/destinations/<id>.ts`):
 
 ```typescript
-export interface CameraWaypoint {
+export interface FlythroughWaypoint {
   center: [number, number]; // [lng, lat]
   zoom: number;
   pitch: number;
@@ -780,7 +780,7 @@ export interface CameraWaypoint {
 }
 
 export interface DestinationFlythrough {
-  waypoints: CameraWaypoint[]; // total duration must add up to ~12s (ADR-014)
+  waypoints: FlythroughWaypoint[]; // total duration must add up to ~12s (ADR-014)
   grade: {
     filter: string; // CSS filter applied to the MapLibre canvas
     overlay: string; // CSS gradient, mixBlendMode "overlay"
