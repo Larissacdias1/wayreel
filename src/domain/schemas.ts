@@ -1,9 +1,13 @@
 // src/domain/schemas.ts
-// Base schemas: WAYREEL.md Section 6.2 (Zod Schemas). origin_iata's format
-// check (3 uppercase letters) was added per ADR-033 (WAYREEL.md Section 17)
-// to validate IATA codes the LLM extracts from its own knowledge for cities
-// outside CITY_TO_IATA (src/domain/airport-codes.ts). Do not add other
-// fields/rules not specified there — see CLAUDE.md "Before any change".
+// Base schemas: WAYREEL.md Section 6.2 (Zod Schemas). The IATA format check
+// (3 uppercase letters) was added per ADR-033 (WAYREEL.md Section 17) to
+// validate codes the LLM extracts from its own knowledge for cities outside
+// CITY_TO_IATA (src/domain/airport-codes.ts). Originally only on
+// TravelIntentSchema.origin_iata; extended to FlightSearchInputSchema's
+// origin/destination too (issue #111 review) since that is the actual entry
+// point where external data reaches the flight search system — the same
+// IATA value flows through both schemas. Do not add other fields/rules not
+// specified there — see CLAUDE.md "Before any change".
 
 import { z } from "zod";
 
@@ -33,8 +37,8 @@ export const TravelIntentSchema = z.object({
 });
 
 export const FlightSearchInputSchema = z.object({
-  origin: z.string().length(3),
-  destination: z.string().length(3),
+  origin: z.string().regex(/^[A-Z]{3}$/),
+  destination: z.string().regex(/^[A-Z]{3}$/),
   departure_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   return_date: z
     .string()
