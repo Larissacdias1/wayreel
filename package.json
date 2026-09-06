@@ -7,11 +7,12 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "server": "tsx watch src/api/index.ts",
+    "server": "tsx --env-file=.env watch src/api/index.ts",
     "lint": "prettier --check .",
     "lint:fix": "prettier --write .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
+    "db:seed": "tsx --env-file=.env src/rag/seed.ts",
     "eval": "tsx src/eval/runner.ts",
     "test:e2e": "playwright test",
     "test:e2e:ci": "playwright test --workers=2",
