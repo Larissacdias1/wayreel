@@ -10,6 +10,7 @@ import type {
   FlightOption,
   FlightLeg,
 } from "../domain/types";
+import type { FlightProvider } from "./flight-provider";
 
 // WAYREEL.md Section 10.2: "Real airlines: TAP, LATAM, Emirates, Qatar
 // Airways, Turkish Airlines, etc."
@@ -129,7 +130,7 @@ function buildOption(
   };
 }
 
-export class MockFlightAdapter {
+export class MockFlightAdapter implements FlightProvider {
   async search(input: FlightSearchInput): Promise<FlightSearchResult> {
     const seed = routeSeed(input.origin, input.destination);
 
