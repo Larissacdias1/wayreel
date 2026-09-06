@@ -18,11 +18,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * What this file does NOT do: per-test reset (that's the responsibility of
  * each spec/fixture, anti-flaky point 5 — "each test resets the database and
  * session"). This is only the environment setup that runs a single time.
- *
- * [DECISION REQUIRED] The test database path and the exact way to run the
- * seed depend on `src/rag/seed.ts`, which does not exist yet (empty skeleton
- * in src/rag/). This file assumes the interface below — adjust the import
- * once the real seed is implemented.
  */
 
 const TEST_DB_PATH = path.resolve(__dirname, "../data/wayreel.test.sqlite");
@@ -36,10 +31,12 @@ async function globalSetup(_config: FullConfig) {
   process.env.DATABASE_PATH = TEST_DB_PATH;
   process.env.FLIGHT_ADAPTER = "mock"; // never "duffel" in E2E
 
-  // Dynamic import: assumes src/rag/seed.ts exports `seedDestinations`
-  // taking the database path. Adjust once the real module exists.
-  const { seedDestinations } = await import("../src/rag/seed");
-  await seedDestinations(TEST_DB_PATH);
+  // Deterministic fixture (e2e/fixtures/seed-destinations.ts) — never the
+  // real Gemini-backed src/rag/seed.ts, so E2E never depends on a live
+  // network call (docs/PLAYWRIGHT.md Section 5, anti-flaky point 2).
+  const { seedDeterministicDestinations } =
+    await import("./fixtures/seed-destinations");
+  seedDeterministicDestinations(TEST_DB_PATH);
 }
 
 export default globalSetup;
