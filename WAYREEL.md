@@ -1048,6 +1048,8 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 
 ### 17.1 Revision Log
 
+> Not every ADR has an entry here — only those that were revised, contested, or had a detailed rationale recorded at creation time. ADR-022, 023, 024, and 026 are original decisions never changed, with no need for a revision log.
+
 **ADR-015 — revised 2026-08-28**
 
 - Problem: Gemini 1.5 Flash, the originally specified model, was discontinued by Google.
