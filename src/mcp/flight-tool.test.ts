@@ -133,3 +133,40 @@ describe("searchFlights", () => {
     jest.useRealTimers();
   });
 });
+
+// Eval (issue #115): docs/EVAL_HARNESS.md eval-07 category ("tool" — MCP
+// searchFlights called with valid IATA codes). Fully deterministic
+// (MockFlightAdapter, no live API) — per ADR-035, deterministic logic gets a
+// permanent Jest test, unlike the live-API-dependent evals (#101/#105/#106/#108).
+describe("Eval: flight search GRU→AGP (#115)", () => {
+  it("returns 3 options, correctly tiered, matching FlightSearchResult's schema", async () => {
+    // No fake provider injected — exercises the real default MockFlightAdapter
+    // end-to-end through searchFlights (Zod validation + adapter + Section 10.5).
+    const result = await searchFlights({
+      origin: "GRU",
+      destination: "AGP",
+      departure_date: "2026-10-01",
+      passengers: 1,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.options).toHaveLength(3);
+    expect(result.options.map((o) => o.tier)).toEqual([
+      "economy",
+      "intermediate",
+      "premium",
+    ]);
+
+    for (const option of result.options) {
+      expect(typeof option.id).toBe("string");
+      expect(option.price.total).toBeGreaterThan(0);
+      expect(option.price.currency).toBe("USD");
+      expect(option.outbound.departure.airport).toBe("GRU");
+      expect(option.outbound.arrival.airport).toBe("AGP");
+      expect(Array.isArray(option.notes)).toBe(true);
+    }
+
+    expect(result.meta.provider).toBe("mock");
+    expect(typeof result.meta.searched_at).toBe("string");
+  });
+});
