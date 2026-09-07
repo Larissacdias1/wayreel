@@ -170,3 +170,34 @@ describe("Eval: flight search GRU→AGP (#115)", () => {
     expect(typeof result.meta.searched_at).toBe("string");
   });
 });
+
+// Eval (issue #116): WAYREEL.md Section 10.5 — "5 consecutive errors →
+// Circuit breaker open for 5 minutes". Fully deterministic (fake provider
+// that always rejects) — per ADR-035, no live API involved, so this is a
+// permanent Jest test rather than a one-off script.
+describe("Eval: circuit breaker (#116)", () => {
+  it("opens the circuit after 5 simulated errors and returns a friendly message", async () => {
+    const fakeProvider: FlightProvider = {
+      search: jest.fn().mockRejectedValue(new Error("simulated failure")),
+    };
+
+    for (let i = 0; i < 5; i++) {
+      const result = await searchFlights(validInput, fakeProvider);
+      expect(result.success).toBe(false);
+    }
+
+    const callsBeforeCircuitOpen = (fakeProvider.search as jest.Mock).mock.calls
+      .length;
+
+    const sixth = await searchFlights(validInput, fakeProvider);
+
+    expect(sixth.success).toBe(false);
+    expect(sixth.error).toBe(
+      "We're having trouble searching flights right now — please try again in a few minutes.",
+    );
+    // Circuit is open: the adapter must not be called again.
+    expect((fakeProvider.search as jest.Mock).mock.calls.length).toBe(
+      callsBeforeCircuitOpen,
+    );
+  }, 20_000);
+});
