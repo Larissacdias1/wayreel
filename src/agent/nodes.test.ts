@@ -1,4 +1,9 @@
-import { detectJailbreak, mergeIntent, extractIntent } from "./nodes";
+import {
+  detectJailbreak,
+  mergeIntent,
+  extractIntent,
+  cleanClarifyResponse,
+} from "./nodes";
 import { createInitialState } from "./state";
 
 describe("detectJailbreak", () => {
@@ -63,5 +68,31 @@ describe("extractIntent", () => {
     const result = await extractIntent(state);
 
     expect(result).toEqual({ error: "jailbreak_detected" });
+  });
+});
+
+describe("cleanClarifyResponse", () => {
+  it("trims whitespace", () => {
+    expect(cleanClarifyResponse("  Where are you flying from?  ")).toBe(
+      "Where are you flying from?",
+    );
+  });
+
+  it("strips surrounding double quotes", () => {
+    expect(cleanClarifyResponse('"Where are you flying from?"')).toBe(
+      "Where are you flying from?",
+    );
+  });
+
+  it("strips surrounding single quotes", () => {
+    expect(cleanClarifyResponse("'Where are you flying from?'")).toBe(
+      "Where are you flying from?",
+    );
+  });
+
+  it("leaves a plain question untouched", () => {
+    expect(cleanClarifyResponse("Where are you flying from?")).toBe(
+      "Where are you flying from?",
+    );
   });
 });

@@ -166,3 +166,29 @@ export async function extractIntent(
 
   return { intent: mergeIntent(state.intent, parsed.data) };
 }
+
+// docs/PROMPTS.md Section 5 — copied verbatim, with the placeholder filled in.
+function buildClarifyPrompt(missingFields: string[]): string {
+  return `The user's intent is incomplete. Missing fields: ${missingFields.join(", ")}
+Generate ONE short, natural question (maximum 15 words) to get the most important missing piece of information.
+Prioritize: origin > budget > vibe > dates.
+Response: just the question, no extra quotes.`;
+}
+
+// docs/PROMPTS.md Section 5: "Response: just the question, no extra
+// quotes" — strip surrounding quotes/whitespace in case the LLM adds them.
+export function cleanClarifyResponse(raw: string): string {
+  return raw.trim().replace(/^["']|["']$/g, "");
+}
+
+export async function clarify(state: AgentState): Promise<Partial<AgentState>> {
+  const missingFields = state.intent?.missing_info ?? [];
+  const prompt = buildClarifyPrompt(missingFields);
+  const raw = await callLLM(prompt);
+  const question = cleanClarifyResponse(raw);
+
+  return {
+    clarification_needed: true,
+    clarification_question: question,
+  };
+}
