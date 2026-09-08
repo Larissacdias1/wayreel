@@ -607,6 +607,10 @@ START → extractIntent → validateIntent → clarify (if needed) → retrieveC
 | validateFlightResults | FlightSearchResult                           | Normalized result                | Zod + tier classification                                |
 | buildResponse         | All of the data above                        | Final message                    | Formats the cinematic response                           |
 
+> [DECISION REQUIRED] — `validateIntent` has its own row above but is not explicitly assigned to any board issue. The closest is #120 (clarify), the node that consumes validateIntent's output ("Missing fields") right after it in the Section 8.1 pipeline, whose DoD doesn't name validateIntent. Needs a decision: split validateIntent into its own issue, or explicitly fold it into #120's DoD before that issue starts.
+
+> [DECISION REQUIRED] — `validateRecommendation` appears in the Section 8.1 pipeline (`recommendDestination → validateRecommendation → searchFlights`) and in `hasRecommendation` (Section 8.3, confidence threshold check), but it never got its own row in the table above, and no board issue names it. The closest is #122 (recommendDestination), whose DoD already folds in the "confidence >= 0.6" criterion — but doesn't name validateRecommendation as a distinct step. Needs a decision: give validateRecommendation its own table row + issue, or explicitly confirm it's already covered by #122's DoD.
+
 Note (ADR-033): whenever `buildResponse` presents a destination, it must include the visa disclaimer from `docs/SECURITY.md` Section 5, the same mechanism already used for the flight price disclaimer — not a new feature, just a second boilerplate line alongside the existing one.
 
 ### 8.3 Conditional transitions
