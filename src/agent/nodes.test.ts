@@ -3,6 +3,7 @@ import {
   mergeIntent,
   extractIntent,
   cleanClarifyResponse,
+  buildIntentQueryText,
 } from "./nodes";
 import { createInitialState } from "./state";
 
@@ -94,5 +95,25 @@ describe("cleanClarifyResponse", () => {
     expect(cleanClarifyResponse("Where are you flying from?")).toBe(
       "Where are you flying from?",
     );
+  });
+});
+
+describe("buildIntentQueryText", () => {
+  it("returns an empty string for a null intent", () => {
+    expect(buildIntentQueryText(null)).toBe("");
+  });
+
+  it("combines vibe, budget_level, and restrictions", () => {
+    expect(
+      buildIntentQueryText({
+        vibe: "romantic",
+        budget_level: "medium",
+        restrictions: ["no long layovers"],
+      }),
+    ).toBe("romantic medium no long layovers");
+  });
+
+  it("skips fields that are missing", () => {
+    expect(buildIntentQueryText({ vibe: "adventure" })).toBe("adventure");
   });
 });

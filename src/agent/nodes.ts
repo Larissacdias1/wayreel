@@ -21,6 +21,7 @@ import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { TravelIntentSchema } from "../domain/schemas";
 import { safeJsonParse } from "../domain/json-parser";
+import { initDatabase, embedText, retrieveTopK } from "../rag/retriever";
 import type { AgentState } from "./state";
 import type { TravelIntent } from "../domain/types";
 
@@ -191,4 +192,41 @@ export async function clarify(state: AgentState): Promise<Partial<AgentState>> {
     clarification_needed: true,
     clarification_question: question,
   };
+}
+
+// Builds the text used to query the RAG by similarity (WAYREEL.md Section
+// 8.2: retrieveContext takes TravelIntent, does a "Similarity search in the
+// RAG"). No exact query-text format is specified — this follows the same
+// spirit as buildEmbeddingText (src/rag/retriever.ts, Section 9.2), using
+// the intent fields that describe the trip's vibe.
+export function buildIntentQueryText(intent: TravelIntent | null): string {
+  if (!intent) return "";
+  const parts = [
+    intent.vibe,
+    intent.budget_level,
+    ...(intent.restrictions ?? []),
+  ].filter((part): part is string => Boolean(part));
+  return parts.join(" ");
+}
+
+export async function retrieveContext(
+  state: AgentState,
+): Promise<Partial<AgentState>> {
+  const apiKey = process.env.GOOGLE_AI_API_KEY;
+  if (!apiKey) {
+    throw new Error(
+      "GOOGLE_AI_API_KEY is not set — required to embed the query (WAYREEL.md Section 9.2).",
+    );
+  }
+
+  const dbPath = process.env.DATABASE_PATH || "data/wayreel.sqlite";
+  const db = initDatabase(dbPath);
+  try {
+    const queryText = buildIntentQueryText(state.intent);
+    const embedding = await embedText(queryText, apiKey);
+    const destinations = retrieveTopK(db, embedding, 3);
+    return { retrieved_destinations: destinations };
+  } finally {
+    db.close();
+  }
 }

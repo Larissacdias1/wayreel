@@ -10,6 +10,7 @@ describe("createInitialState", () => {
       intent: null,
       clarification_needed: false,
       clarification_question: null,
+      retrieved_destinations: [],
       recommendation: null,
       rejected_destinations: [],
       flights: [],

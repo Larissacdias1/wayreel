@@ -645,6 +645,7 @@ interface AgentState {
   intent: TravelIntent | null;
   clarification_needed: boolean;
   clarification_question: string | null;
+  retrieved_destinations: Destination[]; // retrieveContext's output, consumed by recommendDestination (added during #121 — Section 8.2 described this data flow but the interface never had a field for it)
   recommendation: DestinationRecommendation | null;
   rejected_destinations: string[]; // for the "I don't like it" fallback
   flights: FlightOption[];
