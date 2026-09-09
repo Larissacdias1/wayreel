@@ -19,7 +19,10 @@
 
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { TravelIntentSchema } from "../domain/schemas";
+import {
+  TravelIntentSchema,
+  DestinationRecommendationSchema,
+} from "../domain/schemas";
 import { safeJsonParse } from "../domain/json-parser";
 import { initDatabase, embedText, retrieveTopK } from "../rag/retriever";
 import type { AgentState } from "./state";
@@ -229,4 +232,62 @@ export async function retrieveContext(
   } finally {
     db.close();
   }
+}
+
+// docs/PROMPTS.md Section 3 — copied verbatim, with placeholders filled in.
+function buildRecommendDestinationPrompt(
+  intent: TravelIntent | null,
+  destinations: AgentState["retrieved_destinations"],
+): string {
+  return `You received the user's travel intent and the context of available destinations.
+INTENT: ${JSON.stringify(intent)}
+DESTINATIONS: ${JSON.stringify(destinations)}
+
+Choose EXACTLY 1 destination. Provide as JSON:
+- destination_id: string
+- confidence: number (0-1)
+- reason: string (2-3 sentences)
+- caveats: string[]
+
+Respond ONLY in JSON.`;
+}
+
+// WAYREEL.md Section 6.4 fallback table: "recommendDestination | Returns the
+// first RAG destination with confidence 0.5 | Never breaks"
+export function buildFallbackRecommendation(
+  destinations: AgentState["retrieved_destinations"],
+): AgentState["recommendation"] {
+  const first = destinations[0];
+  if (!first) return null;
+  return {
+    destination_id: first.id,
+    confidence: 0.5,
+    reason: "Fallback recommendation after a parsing error.",
+    caveats: [],
+  };
+}
+
+// recommendDestination (WAYREEL.md Section 8.2 node table): "Chooses 1
+// destination with a confidence score". Note: whether low-confidence
+// results should be rejected here or routed to clarify by the graph is the
+// open validateRecommendation [DECISION REQUIRED] (Section 8.2) — this node
+// only calls the LLM and returns whatever DestinationRecommendation comes
+// back, it does not enforce the confidence >= 0.6 threshold itself.
+export async function recommendDestination(
+  state: AgentState,
+): Promise<Partial<AgentState>> {
+  const prompt = buildRecommendDestinationPrompt(
+    state.intent,
+    state.retrieved_destinations,
+  );
+  const raw = await callLLM(prompt);
+
+  const parsed = safeJsonParse(raw, DestinationRecommendationSchema);
+  if (!parsed.success) {
+    return {
+      recommendation: buildFallbackRecommendation(state.retrieved_destinations),
+    };
+  }
+
+  return { recommendation: parsed.data };
 }

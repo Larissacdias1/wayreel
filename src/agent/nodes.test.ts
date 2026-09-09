@@ -4,8 +4,10 @@ import {
   extractIntent,
   cleanClarifyResponse,
   buildIntentQueryText,
+  buildFallbackRecommendation,
 } from "./nodes";
 import { createInitialState } from "./state";
+import type { Destination } from "../domain/types";
 
 describe("detectJailbreak", () => {
   // docs/SECURITY.md Section 2 — Mandatory Tests (pre-launch).
@@ -115,5 +117,49 @@ describe("buildIntentQueryText", () => {
 
   it("skips fields that are missing", () => {
     expect(buildIntentQueryText({ vibe: "adventure" })).toBe("adventure");
+  });
+});
+
+function makeDestination(id: string): Destination {
+  return {
+    id,
+    name: id,
+    country: "Nowhere",
+    region: "Nowhere",
+    coordinates: { lat: 0, lng: 0 },
+    tags: [],
+    vibe_description: "",
+    best_for: [],
+    best_time_to_visit: { months: "always", reason: "" },
+    cost_of_living: { level: "low", daily_estimate_usd: 0, notes: "" },
+    top_attractions: [],
+    budget_neighborhood: { name: "", why: "", avg_hotel_night_usd: 0 },
+    nearest_airport: "XXX",
+    flythrough: {
+      duration_seconds: 12,
+      waypoints: [
+        { coordinates: [0, 0], zoom: 1, pitch: 0, bearing: 0, duration: 1000 },
+      ],
+      grade_profile: "default",
+    },
+  };
+}
+
+describe("buildFallbackRecommendation", () => {
+  it("recommends the first destination with confidence 0.5 (WAYREEL.md Section 6.4)", () => {
+    const result = buildFallbackRecommendation([
+      makeDestination("setenil"),
+      makeDestination("mardin"),
+    ]);
+    expect(result).toEqual({
+      destination_id: "setenil",
+      confidence: 0.5,
+      reason: "Fallback recommendation after a parsing error.",
+      caveats: [],
+    });
+  });
+
+  it("returns null when there are no retrieved destinations", () => {
+    expect(buildFallbackRecommendation([])).toBeNull();
   });
 });
