@@ -5,6 +5,7 @@ import {
   cleanClarifyResponse,
   buildIntentQueryText,
   buildFallbackRecommendation,
+  filterOutRejected,
 } from "./nodes";
 import { createInitialState } from "./state";
 import type { Destination } from "../domain/types";
@@ -161,5 +162,32 @@ describe("buildFallbackRecommendation", () => {
 
   it("returns null when there are no retrieved destinations", () => {
     expect(buildFallbackRecommendation([])).toBeNull();
+  });
+});
+
+describe("filterOutRejected", () => {
+  it("excludes the rejected destination(s) from the list", () => {
+    const destinations = [
+      makeDestination("setenil"),
+      makeDestination("mardin"),
+      makeDestination("sigiriya"),
+    ];
+    const result = filterOutRejected(destinations, ["setenil"]);
+    expect(result.map((d) => d.id)).toEqual(["mardin", "sigiriya"]);
+  });
+
+  it("excludes multiple rejected destinations", () => {
+    const destinations = [
+      makeDestination("setenil"),
+      makeDestination("mardin"),
+      makeDestination("sigiriya"),
+    ];
+    const result = filterOutRejected(destinations, ["setenil", "mardin"]);
+    expect(result.map((d) => d.id)).toEqual(["sigiriya"]);
+  });
+
+  it("returns the full list unchanged when nothing was rejected", () => {
+    const destinations = [makeDestination("setenil")];
+    expect(filterOutRejected(destinations, [])).toEqual(destinations);
   });
 });

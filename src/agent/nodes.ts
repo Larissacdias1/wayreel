@@ -291,3 +291,65 @@ export async function recommendDestination(
 
   return { recommendation: parsed.data };
 }
+
+// docs/PROMPTS.md Section 4 — copied verbatim, with placeholders filled in.
+function buildRecommendAlternativePrompt(
+  intent: TravelIntent | null,
+  rejectedDestinationId: string,
+  filteredDestinations: AgentState["retrieved_destinations"],
+): string {
+  return `The user rejected the previous destination: ${rejectedDestinationId}.
+Choose another destination from the available ones, different from the previous one.
+INTENT: ${JSON.stringify(intent)}
+AVAILABLE DESTINATIONS (excluding the rejected one): ${JSON.stringify(filteredDestinations)}
+
+Provide as JSON:
+- destination_id: string
+- confidence: number (0-1)
+- reason: string (2-3 sentences, highlighting what differs from the previous one)
+- caveats: string[]
+
+Respond ONLY in JSON.`;
+}
+
+// #123 DoD: "Excludes rejected destination, picks second from RAG list".
+export function filterOutRejected(
+  destinations: AgentState["retrieved_destinations"],
+  rejectedIds: string[],
+): AgentState["retrieved_destinations"] {
+  return destinations.filter(
+    (destination) => !rejectedIds.includes(destination.id),
+  );
+}
+
+// recommendAlternative (WAYREEL.md Section 8.2 node table): "Chooses a
+// second destination, excluding the previous one". #123 DoD: "Excludes
+// rejected destination, picks second from RAG list".
+export async function recommendAlternative(
+  state: AgentState,
+): Promise<Partial<AgentState>> {
+  const rejectedId =
+    state.rejected_destinations[state.rejected_destinations.length - 1] ?? "";
+  const filtered = filterOutRejected(
+    state.retrieved_destinations,
+    state.rejected_destinations,
+  );
+
+  const prompt = buildRecommendAlternativePrompt(
+    state.intent,
+    rejectedId,
+    filtered,
+  );
+  const raw = await callLLM(prompt);
+
+  const parsed = safeJsonParse(raw, DestinationRecommendationSchema);
+  if (!parsed.success) {
+    // WAYREEL.md Section 6.4 doesn't have a fallback row specifically for
+    // recommendAlternative — reusing recommendDestination's documented
+    // fallback (Section 6.4, "Never breaks") against the filtered list as
+    // the closest established pattern, rather than inventing new behavior.
+    return { recommendation: buildFallbackRecommendation(filtered) };
+  }
+
+  return { recommendation: parsed.data };
+}
