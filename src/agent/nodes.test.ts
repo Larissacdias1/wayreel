@@ -10,6 +10,8 @@ import {
   searchFlights,
   buildFinalMessage,
   buildResponse,
+  validateIntent,
+  validateRecommendation,
 } from "./nodes";
 import { createInitialState } from "./state";
 import type { Destination, FlightOption } from "../domain/types";
@@ -339,5 +341,91 @@ describe("buildResponse", () => {
     expect(result.messages).toEqual([
       { role: "assistant", content: "Shall we try again?" },
     ]);
+  });
+
+  it("returns the clarification question when clarification is needed", async () => {
+    const state = createInitialState("session-response-6");
+    state.clarification_needed = true;
+    state.clarification_question = "Which city are you flying from?";
+
+    const result = await buildResponse(state);
+
+    expect(result.messages).toEqual([
+      { role: "assistant", content: "Which city are you flying from?" },
+    ]);
+  });
+});
+
+describe("validateIntent", () => {
+  it("flags missing required fields and requests clarification", () => {
+    const state = createInitialState("session-validate-1");
+    state.intent = { vibe: "romantic" };
+
+    const result = validateIntent(state);
+
+    expect(result.clarification_needed).toBe(true);
+    expect(result.intent?.missing_info).toEqual([
+      "origin_iata",
+      "budget_level",
+      "departure_date",
+    ]);
+  });
+
+  it("clears clarification_needed when all required fields are present", () => {
+    const state = createInitialState("session-validate-2");
+    state.intent = {
+      vibe: "romantic",
+      origin_iata: "GRU",
+      budget_level: "medium",
+      departure_date: "2026-10-01",
+    };
+
+    const result = validateIntent(state);
+
+    expect(result).toEqual({ clarification_needed: false });
+  });
+
+  it("treats a completely missing intent as all fields missing", () => {
+    const state = createInitialState("session-validate-3");
+    const result = validateIntent(state);
+    expect(result.clarification_needed).toBe(true);
+    expect(result.intent?.missing_info).toHaveLength(4);
+  });
+});
+
+describe("validateRecommendation", () => {
+  it("errors when there is no recommendation", () => {
+    const state = createInitialState("session-validate-rec-1");
+    expect(validateRecommendation(state)).toEqual({
+      error: "missing_recommendation",
+    });
+  });
+
+  it("errors when the recommended destination isn't in the retrieved list", () => {
+    const state = createInitialState("session-validate-rec-2");
+    state.recommendation = {
+      destination_id: "atlantis",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    state.retrieved_destinations = [makeDestination("setenil")];
+
+    expect(validateRecommendation(state)).toEqual({
+      error: "invalid_recommendation_destination",
+    });
+  });
+
+  it("passes through with no changes when the recommendation is valid", () => {
+    const state = createInitialState("session-validate-rec-3");
+    state.recommendation = {
+      destination_id: "setenil",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    state.retrieved_destinations = [makeDestination("setenil")];
+
+    expect(validateRecommendation(state)).toEqual({});
   });
 });

@@ -201,6 +201,33 @@ export function cleanClarifyResponse(raw: string): string {
   return raw.trim().replace(/^["']|["']$/g, "");
 }
 
+// validateIntent (WAYREEL.md Section 8.2 node table): "Zod schema + checks
+// required fields". Resolved during #126 (agent/graph.ts), which cannot be
+// wired without this node — the required-field priority (origin > budget >
+// vibe > dates) matches docs/PROMPTS.md Section 5's clarify prompt.
+const REQUIRED_INTENT_FIELDS: (keyof TravelIntent)[] = [
+  "origin_iata",
+  "budget_level",
+  "vibe",
+  "departure_date",
+];
+
+export function validateIntent(state: AgentState): Partial<AgentState> {
+  const intent = state.intent;
+  const missing = REQUIRED_INTENT_FIELDS.filter(
+    (field) => intent?.[field] === undefined || intent?.[field] === null,
+  );
+
+  if (missing.length > 0) {
+    return {
+      intent: { ...(intent ?? {}), missing_info: missing },
+      clarification_needed: true,
+    };
+  }
+
+  return { clarification_needed: false };
+}
+
 export async function clarify(state: AgentState): Promise<Partial<AgentState>> {
   const missingFields = state.intent?.missing_info ?? [];
   const prompt = buildClarifyPrompt(missingFields);
@@ -306,6 +333,29 @@ export async function recommendDestination(
   }
 
   return { recommendation: parsed.data };
+}
+
+// validateRecommendation (WAYREEL.md Section 8.1 pipeline: recommendDestination
+// → validateRecommendation → searchFlights). Resolved during #126, which
+// cannot be wired without this node — see the [DECISION REQUIRED] this
+// left open in Section 8.2 (no dedicated table row, no owning issue). The
+// confidence >= 0.6 threshold routing already lives in hasRecommendation
+// (Section 8.3, implemented in graph.ts); this node instead catches a
+// hallucinated destination_id that doesn't match any retrieved destination.
+export function validateRecommendation(state: AgentState): Partial<AgentState> {
+  const recommendation = state.recommendation;
+  if (!recommendation) {
+    return { error: "missing_recommendation" };
+  }
+
+  const isKnownDestination = state.retrieved_destinations.some(
+    (destination) => destination.id === recommendation.destination_id,
+  );
+  if (!isKnownDestination) {
+    return { error: "invalid_recommendation_destination" };
+  }
+
+  return {};
 }
 
 // docs/PROMPTS.md Section 4 — copied verbatim, with placeholders filled in.
@@ -448,6 +498,14 @@ function buildAccommodationTip(
 // response". #125 DoD: "Builds final cinematic message, includes
 // accommodation tip".
 export function buildFinalMessage(state: AgentState): string {
+  // Discovered while wiring agent/graph.ts (#126): clarify (#120) only sets
+  // clarification_needed/clarification_question, it never appends to
+  // state.messages — buildResponse is the single place that turns any node
+  // output into the turn's final message, so it must handle this case too.
+  if (state.clarification_needed && state.clarification_question) {
+    return state.clarification_question;
+  }
+
   // WAYREEL.md Section 6.4 fallback table: "buildResponse | Returns a
   // generic error message | Shall we try again?"
   if (state.error || !state.recommendation || state.flights.length === 0) {
