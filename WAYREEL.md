@@ -723,7 +723,7 @@ Output: FlightSearchResult (see Section 6.1)
 
 ### 10.4 Tier Classification (Deterministic)
 
-> [DECISION REQUIRED] — classifyTier is specified here but not explicitly assigned to any board issue. The closest is #124 (searchFlights), whose DoD doesn't name it or the separate validateFlightResults node from Section 8.2. Needs a decision: split classifyTier + validateFlightResults into their own issue(s), or explicitly fold them into #124's DoD before that issue starts.
+> RESOLVED (#124): classifyTier and validateFlightResults are implemented inside `src/agent/nodes.ts`'s `searchFlights`, the only Sprint 3 issue that calls the flight MCP tool — `searchFlights` re-applies `classifyTier` to every option returned by the adapter before populating `state.flights`, folding in validateFlightResults' "Zod + tier classification" responsibility (Section 8.2) rather than living as separate nodes/issues.
 
 ```typescript
 function classifyTier(option: FlightOption): Tier {

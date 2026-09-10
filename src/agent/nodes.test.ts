@@ -6,9 +6,11 @@ import {
   buildIntentQueryText,
   buildFallbackRecommendation,
   filterOutRejected,
+  classifyTier,
+  searchFlights,
 } from "./nodes";
 import { createInitialState } from "./state";
-import type { Destination } from "../domain/types";
+import type { Destination, FlightOption } from "../domain/types";
 
 describe("detectJailbreak", () => {
   // docs/SECURITY.md Section 2 — Mandatory Tests (pre-launch).
@@ -189,5 +191,89 @@ describe("filterOutRejected", () => {
   it("returns the full list unchanged when nothing was rejected", () => {
     const destinations = [makeDestination("setenil")];
     expect(filterOutRejected(destinations, [])).toEqual(destinations);
+  });
+});
+
+function makeFlightOption(stops: number, price: number): FlightOption {
+  return {
+    id: "opt",
+    tier: "economy",
+    price: { total: price, currency: "USD" },
+    outbound: {
+      departure: { airport: "GRU", time: "2026-10-01T08:00:00.000Z" },
+      arrival: { airport: "AGP", time: "2026-10-01T20:00:00.000Z" },
+      duration_minutes: 720,
+      stops,
+      segments: [],
+    },
+    airline: { name: "Fake Air", code: "FA" },
+    notes: [],
+  };
+}
+
+describe("classifyTier", () => {
+  // WAYREEL.md Section 10.4 — exact boundary cases from the spec.
+  it("classifies 2+ stops under $300 as economy", () => {
+    expect(classifyTier(makeFlightOption(2, 299))).toBe("economy");
+  });
+
+  it("classifies 0 stops over $800 as premium", () => {
+    expect(classifyTier(makeFlightOption(0, 801))).toBe("premium");
+  });
+
+  it("classifies 0 stops over $400 (but <= 800) as intermediate", () => {
+    expect(classifyTier(makeFlightOption(0, 500))).toBe("intermediate");
+  });
+
+  it("classifies 1 stop under $400 as economy", () => {
+    expect(classifyTier(makeFlightOption(1, 399))).toBe("economy");
+  });
+
+  it("falls back to intermediate otherwise", () => {
+    expect(classifyTier(makeFlightOption(1, 500))).toBe("intermediate");
+  });
+});
+
+describe("searchFlights", () => {
+  it("returns an error without calling the MCP tool when the destination is unknown", async () => {
+    const state = createInitialState("session-flights");
+    state.recommendation = {
+      destination_id: "not-a-real-destination",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    state.intent = { origin_iata: "GRU", departure_date: "2026-10-01" };
+
+    const result = await searchFlights(state);
+    expect(result).toEqual({ error: "missing_flight_search_input" });
+  });
+
+  it("returns an error when origin_iata is missing from the intent", async () => {
+    const state = createInitialState("session-flights-2");
+    state.recommendation = {
+      destination_id: "setenil",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    state.intent = { departure_date: "2026-10-01" };
+
+    const result = await searchFlights(state);
+    expect(result).toEqual({ error: "missing_flight_search_input" });
+  });
+
+  it("returns an error when departure_date is missing from the intent", async () => {
+    const state = createInitialState("session-flights-3");
+    state.recommendation = {
+      destination_id: "setenil",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    state.intent = { origin_iata: "GRU" };
+
+    const result = await searchFlights(state);
+    expect(result).toEqual({ error: "missing_flight_search_input" });
   });
 });

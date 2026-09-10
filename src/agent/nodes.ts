@@ -16,6 +16,12 @@
 // Fixed locally, without touching the base schema or the prompt: null values
 // are normalized to undefined before validating, via a schema used only in
 // this file (see NULLABLE_TRAVEL_INTENT_SCHEMA below).
+//
+// classifyTier (WAYREEL.md Section 10.4) and validateFlightResults (Section
+// 8.2) are implemented in searchFlights below — the [DECISION REQUIRED] in
+// Section 10.4/8.2 and this issue's (#124) DoD both flagged that neither had
+// an owning issue; resolved by folding them into #124, the only Sprint 3
+// issue that calls the flight MCP tool.
 
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -25,8 +31,10 @@ import {
 } from "../domain/schemas";
 import { safeJsonParse } from "../domain/json-parser";
 import { initDatabase, embedText, retrieveTopK } from "../rag/retriever";
+import { searchFlights as callSearchFlightsTool } from "../mcp/flight-tool";
+import { destinations } from "../rag/destinations";
 import type { AgentState } from "./state";
-import type { TravelIntent } from "../domain/types";
+import type { TravelIntent, FlightOption } from "../domain/types";
 
 const PRIMARY_MODEL = "gemini-3.5-flash";
 const FALLBACK_MODEL = "gemini-3.1-flash-lite"; // ADR-015: rate-limit fallback
@@ -352,4 +360,60 @@ export async function recommendAlternative(
   }
 
   return { recommendation: parsed.data };
+}
+
+// WAYREEL.md Section 10.4 — copied verbatim (deterministic, "price
+// classification is logic, not AI").
+export function classifyTier(option: FlightOption): FlightOption["tier"] {
+  const price = option.price.total;
+  const stops = option.outbound.stops;
+  if (stops >= 2 && price < 300) return "economy";
+  if (stops === 0 && price > 800) return "premium";
+  if (stops === 0 && price > 400) return "intermediate";
+  if (stops === 1 && price < 400) return "economy";
+  return "intermediate";
+}
+
+// validateFlightResults (WAYREEL.md Section 8.2: "Zod + tier
+// classification") folded into searchFlights — see the note at the top of
+// this file. Re-applies classifyTier to every option so the tier always
+// reflects the deterministic rule, regardless of what the provider set.
+function normalizeFlightOptions(options: FlightOption[]): FlightOption[] {
+  return options.map((option) => ({
+    ...option,
+    tier: classifyTier(option),
+  }));
+}
+
+// searchFlights (WAYREEL.md Section 8.2 node table): "Calls the MCP, not the
+// API directly". #124 DoD: "Calls MCP tool, validates result, populates
+// flights in state".
+export async function searchFlights(
+  state: AgentState,
+): Promise<Partial<AgentState>> {
+  const destinationId = state.recommendation?.destination_id;
+  const destination = destinations.find((d) => d.id === destinationId);
+
+  if (!destination || !state.intent?.origin_iata) {
+    return { error: "missing_flight_search_input" };
+  }
+  if (!state.intent.departure_date) {
+    return { error: "missing_flight_search_input" };
+  }
+
+  const input = {
+    origin: state.intent.origin_iata,
+    destination: destination.nearest_airport,
+    departure_date: state.intent.departure_date,
+    return_date: state.intent.return_date,
+    passengers: state.intent.passengers ?? 1,
+  };
+
+  const result = await callSearchFlightsTool(input);
+
+  if (!result.success) {
+    return { error: result.error ?? "flight_search_failed", flights: [] };
+  }
+
+  return { flights: normalizeFlightOptions(result.options) };
 }
