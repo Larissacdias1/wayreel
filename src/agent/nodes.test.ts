@@ -8,6 +8,8 @@ import {
   filterOutRejected,
   classifyTier,
   searchFlights,
+  buildFinalMessage,
+  buildResponse,
 } from "./nodes";
 import { createInitialState } from "./state";
 import type { Destination, FlightOption } from "../domain/types";
@@ -275,5 +277,67 @@ describe("searchFlights", () => {
 
     const result = await searchFlights(state);
     expect(result).toEqual({ error: "missing_flight_search_input" });
+  });
+});
+
+describe("buildFinalMessage", () => {
+  it("returns the fallback message when there is an error", () => {
+    const state = createInitialState("session-response-1");
+    state.error = "flight_search_failed";
+    expect(buildFinalMessage(state)).toBe("Shall we try again?");
+  });
+
+  it("returns the fallback message when there is no recommendation", () => {
+    const state = createInitialState("session-response-2");
+    state.flights = [makeFlightOption(0, 900)];
+    expect(buildFinalMessage(state)).toBe("Shall we try again?");
+  });
+
+  it("returns the fallback message when there are no flights", () => {
+    const state = createInitialState("session-response-3");
+    state.recommendation = {
+      destination_id: "setenil",
+      confidence: 0.9,
+      reason: "x",
+      caveats: [],
+    };
+    expect(buildFinalMessage(state)).toBe("Shall we try again?");
+  });
+
+  it("builds the final message with destination, flights, accommodation tip, and both disclaimers", () => {
+    const state = createInitialState("session-response-4");
+    state.recommendation = {
+      destination_id: "setenil",
+      confidence: 0.9,
+      reason: "A romantic village carved into the rock.",
+      caveats: [],
+    };
+    state.flights = [makeFlightOption(0, 900)];
+
+    const message = buildFinalMessage(state);
+
+    expect(message).toContain("Setenil de las Bodegas");
+    expect(message).toContain("A romantic village carved into the rock.");
+    expect(message).toContain("economy: $900 USD");
+    expect(message).toContain("Ronda"); // Setenil's budget_neighborhood
+    expect(message).toContain(
+      "Indicative prices, subject to change. Verify at the time of purchase.",
+    );
+    expect(message).toContain(
+      "Visa requirements vary by nationality — always confirm with your country's consulate before booking.",
+    );
+  });
+});
+
+describe("buildResponse", () => {
+  it("appends the final message as an assistant turn", async () => {
+    const state = createInitialState("session-response-5");
+    state.error = "flight_search_failed";
+
+    const result = await buildResponse(state);
+
+    expect(result.messages).toEqual([
+      { role: "assistant", content: "Shall we try again?" },
+    ]);
   });
 });

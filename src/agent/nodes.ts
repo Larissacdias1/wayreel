@@ -22,6 +22,14 @@
 // Section 10.4/8.2 and this issue's (#124) DoD both flagged that neither had
 // an owning issue; resolved by folding them into #124, the only Sprint 3
 // issue that calls the flight MCP tool.
+//
+// buildResponse (#125) has no prompt template in docs/PROMPTS.md (unlike
+// extractIntent/recommendDestination/recommendAlternative/clarify, which all
+// have one) — assembled deterministically instead of via an LLM call, per
+// the Section 2 golden rule ("if a clear deterministic rule exists, do not
+// use an LLM"): the recommendation's reason/caveats were already written by
+// the LLM in recommendDestination, and flight/accommodation data is already
+// structured, so formatting them needs no further generation.
 
 import { z } from "zod";
 import { GoogleGenerativeAI } from "@google/generative-ai";
@@ -416,4 +424,57 @@ export async function searchFlights(
   }
 
   return { flights: normalizeFlightOptions(result.options) };
+}
+
+function buildFlightOptionsSummary(flights: FlightOption[]): string {
+  return flights
+    .map(
+      (option) =>
+        `- ${option.tier}: $${option.price.total} ${option.price.currency} (${option.airline.name})`,
+    )
+    .join("\n");
+}
+
+// #125 DoD: "includes accommodation tip" — from Destination.budget_neighborhood.
+function buildAccommodationTip(
+  destination: (typeof destinations)[number] | undefined,
+): string | null {
+  if (!destination) return null;
+  const { name, why } = destination.budget_neighborhood;
+  return `For cheaper lodging, consider ${name} — ${why}`;
+}
+
+// buildResponse (WAYREEL.md Section 8.2 node table): "Formats the cinematic
+// response". #125 DoD: "Builds final cinematic message, includes
+// accommodation tip".
+export function buildFinalMessage(state: AgentState): string {
+  // WAYREEL.md Section 6.4 fallback table: "buildResponse | Returns a
+  // generic error message | Shall we try again?"
+  if (state.error || !state.recommendation || state.flights.length === 0) {
+    return "Shall we try again?";
+  }
+
+  const destination = destinations.find(
+    (d) => d.id === state.recommendation?.destination_id,
+  );
+
+  const parts = [
+    `I recommend **${destination?.name ?? state.recommendation.destination_id}**. ${state.recommendation.reason}`,
+    buildFlightOptionsSummary(state.flights),
+    buildAccommodationTip(destination),
+    // docs/SECURITY.md Section 5 — both disclaimers, copied verbatim.
+    "Indicative prices, subject to change. Verify at the time of purchase.",
+    "Visa requirements vary by nationality — always confirm with your country's consulate before booking.",
+  ].filter((part): part is string => Boolean(part));
+
+  return parts.join("\n\n");
+}
+
+export async function buildResponse(
+  state: AgentState,
+): Promise<Partial<AgentState>> {
+  const content = buildFinalMessage(state);
+  return {
+    messages: [...state.messages, { role: "assistant", content }],
+  };
 }
