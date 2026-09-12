@@ -38,6 +38,8 @@ Architecture: Eval Case (JSON) → Agent → Output → Assertions → Result (p
 | eval-11 | language       | Input in English: "I want a romantic trip with my wife, budget 2000 reais, leaving from São Paulo"             | Extracts the same fields as eval-01 AND responds in English                  |
 | eval-12 | language       | Input in Spanish: "Quiero un viaje romántico con mi esposa, presupuesto de 2000 reales, saliendo de São Paulo" | Extracts the same fields as eval-01 AND responds in Spanish                  |
 
+> Note: an early verification run for this scenario (#131) showed 2 latency failures out of 3, later traced to unstable network conditions (persistent Gemini API 503s) on the testing machine, not a pipeline issue. 5 consecutive clean runs under confirmed stable network conditions all passed (6-10s, well under the 15s limit).
+
 ## 3. Metrics
 
 | Metric                     | MVP Target                                |
