@@ -656,6 +656,8 @@ interface AgentState {
 }
 ```
 
+> Note: AgentState.experience_state (domain/types.ts) and ui/ExperienceScene (ui/experience-state.ts) are intentionally separate types with different vocabularies — the former describes what the agent concluded (computed result: destination, flights, errors), the latter describes what the UI is currently rendering/animating (scene, transitions, timeouts). Translation between them happens explicitly during SSE integration (#142), not via 1:1 mapping.
+
 ---
 
 ## 9. RAG Specification
