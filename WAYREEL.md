@@ -1055,6 +1055,8 @@ Sufficient for a portfolio (a validated category = a recruiter understands the p
 | **ADR-034**                                          | **Embedding model: gemini-embedding-001, default 3072 dimensions (not the placeholder 1536 in the original spec)**                                                                                                               | **Frozen** |
 | **ADR-035**                                          | **Any logic depending on a live external API (Gemini embeddings, flight search) is verified via one-off manual scripts, never permanent Jest tests — keeps npm test deterministic and free of network dependency in pre-commit** | **Frozen** |
 
+> Note: ADR numbering skips from 031 to 033 — 032 was never assigned to any decision (a numbering error during the session that authored these ADRs, not a discarded or missing decision).
+
 ### 17.1 Revision Log
 
 > Not every ADR has an entry here — only those that were revised, contested, or had a detailed rationale recorded at creation time. ADR-022, 023, 024, and 026 are original decisions never changed, with no need for a revision log.
