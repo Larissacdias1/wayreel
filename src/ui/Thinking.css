@@ -1,0 +1,59 @@
+/* src/ui/Thinking.css
+   Issue #141 DoD: "CSS particles, blur, copy, 3s timeout". No specific
+   values (blur radius, particle count/size/color, copy text) are
+   documented anywhere in WAYREEL.md/docs/DESIGN_TOKENS.md — per user
+   decision, this is a minimal, reasonable implementation using only
+   already-frozen tokens (ADR-028), not new creative values. Exact visual
+   values below are open for future refinement, not a frozen decision. */
+
+/* [VISUAL REFINEMENT PENDING] Particle style, blur amount, and copy text
+   are functional placeholders using only existing design tokens —
+   intentionally not finalized, pending a dedicated visual pass (see
+   conversation on cinematic feel validation before Sprint 4). */
+
+.thinking-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  /* "blur" — no documented radius; 8px is a common, unobtrusive value. */
+  backdrop-filter: blur(8px);
+  background: rgba(20, 16, 12, 0.4);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+}
+
+.thinking-particles {
+  position: relative;
+  width: 120px;
+  height: 24px;
+}
+
+/* "particles" — no documented count/size/motion; 6 small dots with a
+   staggered float/fade loop, using the accent token (not an invented
+   color). */
+.thinking-particle {
+  position: absolute;
+  bottom: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: thinking-particle-float 1.2s ease-in-out infinite;
+}
+
+@keyframes thinking-particle-float {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-16px);
+  }
+}

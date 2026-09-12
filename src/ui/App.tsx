@@ -16,6 +16,7 @@ import {
   initialExperienceScene,
 } from "./experience-state";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
+import Thinking from "./Thinking";
 
 export default function App() {
   const reducedMotion = usePrefersReducedMotion();
@@ -44,11 +45,12 @@ export default function App() {
     case "THINKING":
       return (
         <div data-scene="THINKING">
-          {scene.timedOut ? (
-            <button onClick={() => dispatch({ type: "RETRY" })}>
-              Try again
-            </button>
-          ) : (
+          <Thinking
+            timedOut={scene.timedOut}
+            onTimeout={() => dispatch({ type: "THINKING_TIMEOUT" })}
+            onRetry={() => dispatch({ type: "RETRY" })}
+          />
+          {!scene.timedOut && (
             <button
               onClick={() =>
                 dispatch({
