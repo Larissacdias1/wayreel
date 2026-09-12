@@ -99,6 +99,45 @@ describe("FlythroughController", () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
+  it("calls onWaypointChange with the waypoint and index as each one starts playing", async () => {
+    const { map, triggerMoveEnd } = createFakeMap();
+    const mapFactory = jest.fn().mockReturnValue(map);
+    const onWaypointChange = jest.fn();
+    const controller = new FlythroughController({
+      container,
+      waypoints: WAYPOINTS,
+      reducedMotion: false,
+      mapFactory,
+      onWaypointChange,
+    });
+
+    const playPromise = controller.play();
+    await flushMicrotasks();
+    expect(onWaypointChange).toHaveBeenNthCalledWith(1, WAYPOINTS[0], 0);
+
+    triggerMoveEnd();
+    await flushMicrotasks();
+    expect(onWaypointChange).toHaveBeenNthCalledWith(2, WAYPOINTS[1], 1);
+
+    triggerMoveEnd();
+    await playPromise;
+    expect(onWaypointChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not call onWaypointChange when reduced motion skips the flythrough", async () => {
+    const onWaypointChange = jest.fn();
+    const controller = new FlythroughController({
+      container,
+      waypoints: WAYPOINTS,
+      reducedMotion: true,
+      mapFactory: jest.fn(),
+      onWaypointChange,
+    });
+
+    await controller.play();
+    expect(onWaypointChange).not.toHaveBeenCalled();
+  });
+
   it("waits the hold duration between a waypoint and the next", async () => {
     jest.useFakeTimers();
     const { map, triggerMoveEnd } = createFakeMap();

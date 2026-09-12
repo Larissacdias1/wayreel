@@ -10,30 +10,12 @@
 // machine itself ("Complete state machine (8 states), correct
 // transitions"), not the final visual content.
 
-import { useEffect, useReducer, useState } from "react";
+import { useReducer } from "react";
 import {
   createExperienceReducer,
   initialExperienceScene,
 } from "./experience-state";
-
-// Section 11.3 — "prefers-reduced-motion: skips straight to REVEAL with
-// static cards".
-function usePrefersReducedMotion(): boolean {
-  const [reducedMotion, setReducedMotion] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  );
-
-  useEffect(() => {
-    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const handleChange = () => setReducedMotion(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  return reducedMotion;
-}
+import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 
 export default function App() {
   const reducedMotion = usePrefersReducedMotion();

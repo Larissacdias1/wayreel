@@ -69,6 +69,11 @@ export interface FlythroughControllerOptions {
   reducedMotion: boolean;
   mapFactory?: MapFactory;
   onComplete?: () => void;
+  // Section 11.4 (HUD Overlay) — "updates on every waypoint change". Added
+  // during #139: the HudOverlay component needs the real-time active
+  // waypoint, which this controller previously had no way to expose
+  // (getState() only reports playback lifecycle, not position).
+  onWaypointChange?: (waypoint: FlythroughWaypoint, index: number) => void;
 }
 
 export class FlythroughController {
@@ -114,6 +119,7 @@ export class FlythroughController {
       const waypoint = this.options.waypoints[i];
       if (!waypoint) continue;
 
+      this.options.onWaypointChange?.(waypoint, i);
       await this.flyToWaypoint(waypoint, signal);
       if (signal.aborted) return;
 
