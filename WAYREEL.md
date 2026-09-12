@@ -506,6 +506,8 @@ export function cityToIata(city: string): string | null {
 Fallback: If the city is not in the table, extractIntent falls back to the LLM's own IATA knowledge, validated by a 3-letter uppercase regex before being accepted (ADR-033) — the table remains the deterministic fast path, the LLM is only a fallback for the long tail.
 Future scale: Replace with a geocoding API (Google Places, GeoNames) when justified.
 
+> [DECISION REQUIRED] extractIntent has extracted 'SAO' instead of 'GRU' for 'São Paulo' in multiple verifications (#131, #154) — CITY_TO_IATA already maps 'sao paulo'→GRU correctly (src/domain/airport-codes.ts), so the imprecision is in the LLM's knowledge fallback (docs/PROMPTS.md Section 2) ignoring the deterministic table, not in the table itself. Needs investigation: is the LLM inventing a plausible code instead of recognizing it should consult the table first?
+
 ### 6.4 Robust JSON Parser (Retry)
 
 ```typescript

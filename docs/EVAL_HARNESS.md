@@ -40,6 +40,8 @@ Architecture: Eval Case (JSON) → Agent → Output → Assertions → Result (p
 
 > Note: an early verification run for this scenario (#131) showed 2 latency failures out of 3, later traced to unstable network conditions (persistent Gemini API 503s) on the testing machine, not a pipeline issue. 5 consecutive clean runs under confirmed stable network conditions all passed (6-10s, well under the 15s limit).
 
+> [KNOWN LIMITATION] (#154) eval-11's exact input contains two Portuguese-origin loanwords ("reais", "São Paulo") inside an otherwise English sentence. Across 3 consecutive live verification runs, the agent consistently responded in Portuguese instead of English, even after docs/PROMPTS.md Sections 3-5 were updated to pass the user's original message and an explicit "respond in the same language" instruction into every generation prompt (recommendDestination, recommendAlternative, clarify — previously none of them received the original message or a language instruction at all, which is now fixed and verified working correctly for eval-01 PT and eval-12 ES, 3/3 runs each). The model appears to weigh the loanwords over the sentence's dominant English grammar. Not fixed further pending a decision on prompt wording (e.g., explicitly instructing the model to identify the dominant language and ignore isolated loanwords/proper nouns).
+
 ## 3. Metrics
 
 | Metric                     | MVP Target                                |

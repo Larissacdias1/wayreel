@@ -72,11 +72,12 @@ Respond ONLY in valid JSON, no markdown.
 You received the user's travel intent and the context of available destinations.
 INTENT: {travel_intent_json}
 DESTINATIONS: {retrieved_destinations}
+USER'S ORIGINAL MESSAGE: {original_user_message}
 
 Choose EXACTLY 1 destination. Provide as JSON:
 - destination_id: string
 - confidence: number (0-1)
-- reason: string (2-3 sentences)
+- reason: string (2-3 sentences, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7)
 - caveats: string[]
 
 Respond ONLY in JSON.
@@ -89,11 +90,12 @@ The user rejected the previous destination: {rejected_destination_id}.
 Choose another destination from the available ones, different from the previous one.
 INTENT: {travel_intent_json}
 AVAILABLE DESTINATIONS (excluding the rejected one): {filtered_destinations}
+USER'S ORIGINAL MESSAGE: {original_user_message}
 
 Provide as JSON:
 - destination_id: string
 - confidence: number (0-1)
-- reason: string (2-3 sentences, highlighting what differs from the previous one)
+- reason: string (2-3 sentences, highlighting what differs from the previous one, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7)
 - caveats: string[]
 
 Respond ONLY in JSON.
@@ -103,7 +105,8 @@ Respond ONLY in JSON.
 
 ```
 The user's intent is incomplete. Missing fields: {missing_fields}
-Generate ONE short, natural question (maximum 15 words) to get the most important missing piece of information.
+USER'S ORIGINAL MESSAGE: {original_user_message}
+Generate ONE short, natural question (maximum 15 words) to get the most important missing piece of information, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7.
 Prioritize: origin > budget > vibe > dates.
 Response: just the question, no extra quotes.
 ```

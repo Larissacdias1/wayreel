@@ -188,9 +188,13 @@ export async function extractIntent(
 }
 
 // docs/PROMPTS.md Section 5 — copied verbatim, with the placeholder filled in.
-function buildClarifyPrompt(missingFields: string[]): string {
+function buildClarifyPrompt(
+  missingFields: string[],
+  originalUserMessage: string,
+): string {
   return `The user's intent is incomplete. Missing fields: ${missingFields.join(", ")}
-Generate ONE short, natural question (maximum 15 words) to get the most important missing piece of information.
+USER'S ORIGINAL MESSAGE: ${originalUserMessage}
+Generate ONE short, natural question (maximum 15 words) to get the most important missing piece of information, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7.
 Prioritize: origin > budget > vibe > dates.
 Response: just the question, no extra quotes.`;
 }
@@ -230,7 +234,9 @@ export function validateIntent(state: AgentState): Partial<AgentState> {
 
 export async function clarify(state: AgentState): Promise<Partial<AgentState>> {
   const missingFields = state.intent?.missing_info ?? [];
-  const prompt = buildClarifyPrompt(missingFields);
+  const originalUserMessage =
+    state.messages[state.messages.length - 1]?.content ?? "";
+  const prompt = buildClarifyPrompt(missingFields, originalUserMessage);
   const raw = await callLLM(prompt);
   const question = cleanClarifyResponse(raw);
 
@@ -281,15 +287,17 @@ export async function retrieveContext(
 function buildRecommendDestinationPrompt(
   intent: TravelIntent | null,
   destinations: AgentState["retrieved_destinations"],
+  originalUserMessage: string,
 ): string {
   return `You received the user's travel intent and the context of available destinations.
 INTENT: ${JSON.stringify(intent)}
 DESTINATIONS: ${JSON.stringify(destinations)}
+USER'S ORIGINAL MESSAGE: ${originalUserMessage}
 
 Choose EXACTLY 1 destination. Provide as JSON:
 - destination_id: string
 - confidence: number (0-1)
-- reason: string (2-3 sentences)
+- reason: string (2-3 sentences, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7)
 - caveats: string[]
 
 Respond ONLY in JSON.`;
@@ -322,6 +330,7 @@ export async function recommendDestination(
   const prompt = buildRecommendDestinationPrompt(
     state.intent,
     state.retrieved_destinations,
+    state.messages[state.messages.length - 1]?.content ?? "",
   );
   const raw = await callLLM(prompt);
 
@@ -363,16 +372,18 @@ function buildRecommendAlternativePrompt(
   intent: TravelIntent | null,
   rejectedDestinationId: string,
   filteredDestinations: AgentState["retrieved_destinations"],
+  originalUserMessage: string,
 ): string {
   return `The user rejected the previous destination: ${rejectedDestinationId}.
 Choose another destination from the available ones, different from the previous one.
 INTENT: ${JSON.stringify(intent)}
 AVAILABLE DESTINATIONS (excluding the rejected one): ${JSON.stringify(filteredDestinations)}
+USER'S ORIGINAL MESSAGE: ${originalUserMessage}
 
 Provide as JSON:
 - destination_id: string
 - confidence: number (0-1)
-- reason: string (2-3 sentences, highlighting what differs from the previous one)
+- reason: string (2-3 sentences, highlighting what differs from the previous one, in the same language as the user's original message above — Portuguese, English, or Spanish; if ambiguous or mixed, default to English, per Section 1 rule 7)
 - caveats: string[]
 
 Respond ONLY in JSON.`;
@@ -405,6 +416,7 @@ export async function recommendAlternative(
     state.intent,
     rejectedId,
     filtered,
+    state.messages[state.messages.length - 1]?.content ?? "",
   );
   const raw = await callLLM(prompt);
 
