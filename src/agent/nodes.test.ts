@@ -289,6 +289,17 @@ describe("buildFinalMessage", () => {
     expect(buildFinalMessage(state)).toBe("Shall we try again?");
   });
 
+  // #132: a jailbreak hit must use docs/PROMPTS.md Section 6's specific
+  // redirect, not the generic error fallback — never confirm to the user
+  // that a manipulation attempt was detected.
+  it("returns the jailbreak-specific redirect (docs/PROMPTS.md Section 6) when error is jailbreak_detected", () => {
+    const state = createInitialState("session-response-jailbreak");
+    state.error = "jailbreak_detected";
+    expect(buildFinalMessage(state)).toBe(
+      "Let's focus on your next adventure! Tell me: what kind of experience makes you dream? Beach, mountains, historic city?",
+    );
+  });
+
   it("returns the fallback message when there is no recommendation", () => {
     const state = createInitialState("session-response-2");
     state.flights = [makeFlightOption(0, 900)];

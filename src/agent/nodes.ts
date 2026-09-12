@@ -506,6 +506,13 @@ export function buildFinalMessage(state: AgentState): string {
     return state.clarification_question;
   }
 
+  // Discovered while verifying #132 (jailbreak detection): a jailbreak hit
+  // was falling into the generic error fallback below instead of
+  // docs/PROMPTS.md Section 6's specific redirect, copied verbatim here.
+  if (state.error === "jailbreak_detected") {
+    return "Let's focus on your next adventure! Tell me: what kind of experience makes you dream? Beach, mountains, historic city?";
+  }
+
   // WAYREEL.md Section 6.4 fallback table: "buildResponse | Returns a
   // generic error message | Shall we try again?"
   if (state.error || !state.recommendation || state.flights.length === 0) {
