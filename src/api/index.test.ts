@@ -116,6 +116,53 @@ describe("GET /api/stream", () => {
     expect(res.text).toContain("final message");
   });
 
+  it("includes destinationId, flights, error, and clarificationNeeded for the UI's state machine (#142)", async () => {
+    invokeMock.mockResolvedValue({
+      session_id: SESSION_ID,
+      messages: [{ role: "assistant", content: "final message" }],
+      recommendation: { destination_id: "setenil", confidence: 0.9 },
+      flights: [{ id: "f1", tier: "economy" }],
+      error: null,
+      clarification_needed: false,
+    });
+
+    await request(app)
+      .post("/api/chat")
+      .send({ message: "hi", session_id: SESSION_ID });
+
+    const res = await request(app).get(`/api/stream?session_id=${SESSION_ID}`);
+    const payload = JSON.parse(res.text.replace(/^data: /, "").trim());
+
+    expect(payload).toEqual({
+      message: { role: "assistant", content: "final message" },
+      destinationId: "setenil",
+      flights: [{ id: "f1", tier: "economy" }],
+      error: null,
+      clarificationNeeded: false,
+    });
+  });
+
+  it("sends destinationId: null and clarificationNeeded: true when the agent asked a clarifying question", async () => {
+    invokeMock.mockResolvedValue({
+      session_id: SESSION_ID,
+      messages: [{ role: "assistant", content: "Where are you flying from?" }],
+      recommendation: null,
+      flights: [],
+      error: null,
+      clarification_needed: true,
+    });
+
+    await request(app)
+      .post("/api/chat")
+      .send({ message: "hi", session_id: SESSION_ID });
+
+    const res = await request(app).get(`/api/stream?session_id=${SESSION_ID}`);
+    const payload = JSON.parse(res.text.replace(/^data: /, "").trim());
+
+    expect(payload.destinationId).toBeNull();
+    expect(payload.clarificationNeeded).toBe(true);
+  });
+
   it("returns 404 for a session_id that was never POSTed", async () => {
     const res = await request(app).get(
       "/api/stream?session_id=99999999-9999-9999-9999-999999999999",

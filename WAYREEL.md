@@ -658,6 +658,8 @@ interface AgentState {
 
 > Note: AgentState.experience_state (domain/types.ts) and ui/ExperienceScene (ui/experience-state.ts) are intentionally separate types with different vocabularies — the former describes what the agent concluded (computed result: destination, flights, errors), the latter describes what the UI is currently rendering/animating (scene, transitions, timeouts). Translation between them happens explicitly during SSE integration (#142), not via 1:1 mapping.
 
+> [DECISION REQUIRED] POST /api/chat has no field to pass rejected_destinations — the ALTERNATIVE flow (#123, #133) works at the agent level but has no real API path yet. Needs resolution before #129 (E2E fallback test) can be implemented for real, not via placeholder button.
+
 ---
 
 ## 9. RAG Specification

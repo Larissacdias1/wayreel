@@ -28,6 +28,13 @@ export type ExperienceEvent =
   | { type: "THINKING_TIMEOUT" }
   | { type: "RETRY" }
   | { type: "DESTINATION_DECIDED"; destinationId: string }
+  // Added during #142: the agent can respond to a message with a
+  // clarifying question instead of a destination (AgentState's
+  // clarification_needed) — not one of Section 7's two documented THINKING
+  // outcomes (destination decided / timeout), but a real, frequent case in
+  // the actual conversation flow. Returns to CHATTING so the question shows
+  // up as a chat message; no new scene, matching the DoD's "8 states".
+  | { type: "CLARIFICATION_NEEDED" }
   | { type: "FLYTHROUGH_SKIPPED" }
   | { type: "FLYTHROUGH_COMPLETE" }
   | { type: "REJECT_DESTINATION" }
@@ -60,6 +67,7 @@ export function createExperienceReducer(reducedMotion: boolean) {
         if (event.type === "THINKING_TIMEOUT")
           return { type: "THINKING", timedOut: true };
         if (event.type === "RETRY") return { type: "CHATTING" };
+        if (event.type === "CLARIFICATION_NEEDED") return { type: "CHATTING" };
         if (event.type === "DESTINATION_DECIDED") {
           // Section 11.3 — reduced motion skips the entire flythrough scene.
           return reducedMotion

@@ -40,6 +40,15 @@ describe("experienceReducer (WAYREEL.md Section 7)", () => {
     ).toEqual({ type: "CHATTING" });
   });
 
+  it("THINKING --CLARIFICATION_NEEDED--> CHATTING (agent asked a follow-up question instead of deciding)", () => {
+    expect(
+      reducer(
+        { type: "THINKING", timedOut: false },
+        { type: "CLARIFICATION_NEEDED" },
+      ),
+    ).toEqual({ type: "CHATTING" });
+  });
+
   it("THINKING --DESTINATION_DECIDED--> FLYTHROUGH", () => {
     expect(
       reducer(

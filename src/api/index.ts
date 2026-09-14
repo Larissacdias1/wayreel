@@ -147,8 +147,21 @@ app.get("/api/stream", (req: Request, res: Response) => {
   res.setHeader("Cache-Control", "no-cache");
   res.setHeader("Connection", "keep-alive");
 
+  // Extended during #142: the UI's experience-state machine needs more
+  // than the chat text to decide its next transition (e.g.
+  // DESTINATION_DECIDED needs a destinationId, CLARIFICATION_NEEDED needs
+  // to know clarification_needed) — the previous payload only sent the
+  // last chat message.
   const lastMessage = state.messages[state.messages.length - 1];
-  res.write(`data: ${JSON.stringify(lastMessage)}\n\n`);
+  res.write(
+    `data: ${JSON.stringify({
+      message: lastMessage,
+      destinationId: state.recommendation?.destination_id ?? null,
+      flights: state.flights,
+      error: state.error,
+      clarificationNeeded: state.clarification_needed,
+    })}\n\n`,
+  );
   res.end();
 });
 
