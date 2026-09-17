@@ -13,6 +13,10 @@
 // (no such request field exists), which is a separate gap this issue's DoD
 // ("Consumes /api/stream, updates state by event") doesn't cover; the
 // ALTERNATIVE scene keeps its #137 placeholder button.
+//
+// Scene changes are cross-faded via SceneTransition, a single central
+// wrapper (per user decision) — individual scene components know nothing
+// about this transition.
 
 import { useReducer, useState } from "react";
 import {
@@ -20,6 +24,7 @@ import {
   initialExperienceScene,
 } from "./experience-state";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
+import SceneTransition from "./SceneTransition";
 import Thinking from "./Thinking";
 import "./Home.css";
 import HomeMapBackground from "./HomeMapBackground";
@@ -68,121 +73,131 @@ export default function App() {
     }
   }
 
-  switch (scene.type) {
-    case "IDLE":
-      return (
-        <div className="home-screen" data-scene="IDLE">
-          <HomeMapBackground />
-          <div className="home-map-overlay" />
-          <h1 className="home-title">
-            <span className="reveal-mask">
-              <span className="reveal-text">Wayreel</span>
-            </span>
-          </h1>
-          <p className="home-tagline">
-            <span className="reveal-mask">
-              <span className="reveal-text">
-                Tell me what you&apos;re looking for. I&apos;ll show you where
-                to go.
+  function renderScene() {
+    switch (scene.type) {
+      case "IDLE":
+        return (
+          <div className="home-screen" data-scene="IDLE">
+            <HomeMapBackground />
+            <div className="home-map-overlay" />
+            <div className="home-text-backdrop" />
+            <h1 className="home-title">
+              <span className="reveal-mask">
+                <span className="reveal-text">Wayreel</span>
               </span>
-            </span>
-          </p>
-          <button
-            className="btn-primary"
-            onClick={() => dispatch({ type: "START" })}
-          >
-            Discover
-          </button>
-        </div>
-      );
+            </h1>
+            <p className="home-tagline">
+              <span className="reveal-mask">
+                <span className="reveal-text">
+                  Tell me what you&apos;re looking for. I&apos;ll show you where
+                  to go.
+                </span>
+              </span>
+            </p>
+            <button
+              className="btn-primary"
+              onClick={() => dispatch({ type: "START" })}
+            >
+              Discover
+            </button>
+          </div>
+        );
 
-    case "CHATTING":
-      return (
-        <div data-scene="CHATTING">
-          <Chat messages={messages} onSendMessage={handleSendMessage} />
-        </div>
-      );
+      case "CHATTING":
+        return (
+          <div data-scene="CHATTING">
+            <Chat messages={messages} onSendMessage={handleSendMessage} />
+          </div>
+        );
 
-    case "THINKING":
-      return (
-        <div data-scene="THINKING">
-          <Thinking
-            timedOut={scene.timedOut}
-            onTimeout={() => dispatch({ type: "THINKING_TIMEOUT" })}
-            onRetry={() => dispatch({ type: "RETRY" })}
-          />
-        </div>
-      );
+      case "THINKING":
+        return (
+          <div data-scene="THINKING">
+            <Thinking
+              timedOut={scene.timedOut}
+              onTimeout={() => dispatch({ type: "THINKING_TIMEOUT" })}
+              onRetry={() => dispatch({ type: "RETRY" })}
+            />
+          </div>
+        );
 
-    case "FLYTHROUGH":
-      return (
-        <div data-scene="FLYTHROUGH">
-          <Flythrough
-            destinationId={scene.destinationId}
-            onComplete={() => dispatch({ type: "FLYTHROUGH_COMPLETE" })}
-          />
-        </div>
-      );
+      case "FLYTHROUGH":
+        return (
+          <div data-scene="FLYTHROUGH">
+            <Flythrough
+              destinationId={scene.destinationId}
+              onComplete={() => dispatch({ type: "FLYTHROUGH_COMPLETE" })}
+            />
+          </div>
+        );
 
-    case "REVEAL":
-      return (
-        <div data-scene="REVEAL">
-          <button
-            className="btn-primary"
-            onClick={() => dispatch({ type: "REJECT_DESTINATION" })}
-          >
-            I don&apos;t like it, show another
-          </button>
-          <button
-            className="btn-primary"
-            onClick={() => dispatch({ type: "SCROLL_TO_OPTIONS" })}
-          >
-            Continue
-          </button>
-        </div>
-      );
+      case "REVEAL":
+        return (
+          <div data-scene="REVEAL">
+            <button
+              className="btn-primary"
+              onClick={() => dispatch({ type: "REJECT_DESTINATION" })}
+            >
+              I don&apos;t like it, show another
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() => dispatch({ type: "SCROLL_TO_OPTIONS" })}
+            >
+              Continue
+            </button>
+          </div>
+        );
 
-    case "ALTERNATIVE":
-      return (
-        <div data-scene="ALTERNATIVE">
-          <button
-            className="btn-primary"
-            onClick={() =>
-              dispatch({ type: "ALTERNATIVE_READY", destinationId: "mardin" })
-            }
-          >
-            (placeholder) Alternative ready
-          </button>
-        </div>
-      );
+      case "ALTERNATIVE":
+        return (
+          <div data-scene="ALTERNATIVE">
+            <button
+              className="btn-primary"
+              onClick={() =>
+                dispatch({
+                  type: "ALTERNATIVE_READY",
+                  destinationId: "mardin",
+                })
+              }
+            >
+              (placeholder) Alternative ready
+            </button>
+          </div>
+        );
 
-    case "OPTIONS":
-      return (
-        <div data-scene="OPTIONS">
-          <TravelOptions
-            flights={flights}
-            destinationName={scene.destinationId}
-            accommodationTip={null}
-          />
-          <button
-            className="btn-primary"
-            onClick={() => dispatch({ type: "SCROLL_TO_CTA" })}
-          >
-            Continue
-          </button>
-        </div>
-      );
+      case "OPTIONS":
+        return (
+          <div data-scene="OPTIONS">
+            <TravelOptions
+              flights={flights}
+              destinationName={scene.destinationId}
+              accommodationTip={null}
+            />
+            <button
+              className="btn-primary"
+              onClick={() => dispatch({ type: "SCROLL_TO_CTA" })}
+            >
+              Continue
+            </button>
+          </div>
+        );
 
-    case "CTA":
-      return (
-        <div data-scene="CTA">
-          <button
-            className="btn-primary"
-            onClick={() => dispatch({ type: "NEW_SEARCH" })}
-          >
-            New search
-          </button>
-        </div>
-      );
+      case "CTA":
+        return (
+          <div data-scene="CTA">
+            <button
+              className="btn-primary"
+              onClick={() => dispatch({ type: "NEW_SEARCH" })}
+            >
+              New search
+            </button>
+          </div>
+        );
+    }
   }
+
+  return (
+    <SceneTransition sceneKey={scene.type}>{renderScene()}</SceneTransition>
+  );
 }

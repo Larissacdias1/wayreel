@@ -47,6 +47,23 @@
   opacity: 0.85;
 }
 
+/* Dedicated darkening behind the title/tagline/button block specifically —
+   legibility no longer depends on which part of the map happens to be
+   underneath. Soft radial falloff (no hard edge), centered where the text
+   already sits (the flex layout centers it). var(--bg-base), no new
+   color. */
+.home-text-backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse 480px 320px at center,
+    var(--bg-base) 0%,
+    transparent 70%
+  );
+  opacity: 0.55;
+}
+
 /* Curtain-mask reveal: the outer element clips (overflow: hidden), the
    inner .reveal-text slides up from fully hidden (translateY(100%)) to
    its resting position. Title and tagline are each treated as a single
