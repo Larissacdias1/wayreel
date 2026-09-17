@@ -97,6 +97,13 @@ export interface FlythroughControllerOptions {
   // waypoint, which this controller previously had no way to expose
   // (getState() only reports playback lifecycle, not position).
   onWaypointChange?: (waypoint: FlythroughWaypoint, index: number) => void;
+  // Opt-in, ambient/decorative use only (e.g. HomeMapBackground.tsx) —
+  // defaults to false/undefined, so the real destination flythrough
+  // (#136/#139, Section 11.1-11.2) is completely unaffected and never
+  // loops. When true, reaching the last waypoint restarts from index 0 on
+  // the SAME map/controller instance instead of completing — no
+  // destroy()/recreate, no onComplete call, no tile-cache/canvas reset.
+  loop?: boolean;
 }
 
 export class FlythroughController {
@@ -136,21 +143,30 @@ export class FlythroughController {
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
-    for (let i = this.currentIndex; i < this.options.waypoints.length; i++) {
-      if (signal.aborted) return;
-      this.currentIndex = i;
-      const waypoint = this.options.waypoints[i];
-      if (!waypoint) continue;
-
-      this.options.onWaypointChange?.(waypoint, i);
-      await this.flyToWaypoint(waypoint, signal);
-      if (signal.aborted) return;
-
-      if (waypoint.hold) {
-        await this.wait(waypoint.hold, signal);
+    // The `do` runs the waypoint list once; the `while` only re-enters it
+    // when `loop` is on and playback wasn't paused/skipped/destroyed midway
+    // (all of which abort `signal` and `return` from inside the loop body
+    // below, never reaching the `while` check) — so non-looping callers
+    // (the real destination flythrough) see exactly the same single pass
+    // as before this option existed.
+    do {
+      for (let i = this.currentIndex; i < this.options.waypoints.length; i++) {
         if (signal.aborted) return;
+        this.currentIndex = i;
+        const waypoint = this.options.waypoints[i];
+        if (!waypoint) continue;
+
+        this.options.onWaypointChange?.(waypoint, i);
+        await this.flyToWaypoint(waypoint, signal);
+        if (signal.aborted) return;
+
+        if (waypoint.hold) {
+          await this.wait(waypoint.hold, signal);
+          if (signal.aborted) return;
+        }
       }
-    }
+      this.currentIndex = 0;
+    } while (this.options.loop && this.state === "playing");
 
     if (this.state === "playing") {
       this.currentIndex = this.options.waypoints.length;

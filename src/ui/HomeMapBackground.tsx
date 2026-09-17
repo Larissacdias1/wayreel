@@ -3,13 +3,14 @@
 // with a wide, slow, looping set of waypoints as the Home/IDLE screen's
 // background — not a new map integration or a parallel camera system.
 //
-// Loop: FlythroughController has no native loop option (the real
-// destination flythrough it's shared with never loops), so the loop is
-// implemented externally here by destroying and recreating a fresh
-// controller on every onComplete. Trade-off: MapLibre's tile cache is lost
-// on each recreate, causing a brief tile reload at the ~60s seam —
-// accepted as negligible given the heavy grayscale/duotone filter
-// (Home.css) applied on top.
+// Loop: uses FlythroughController's opt-in `loop: true` mode (added
+// specifically for this ambient/decorative use case) — restarts from
+// waypoint 0 on the SAME map/controller instance when the cycle ends, no
+// destroy()/recreate. The real destination flythrough (#136/#139) never
+// passes `loop`, so it's completely unaffected. Fixes a real flash/pop at
+// every ~60s loop seam that the previous destroy()+recreate approach had
+// (WebGL canvas + tile cache were torn down and rebuilt from scratch each
+// cycle).
 //
 // Waypoints: one representative, recognizable point per continent (Africa,
 // Europe, Asia, North America, South America, Oceania), zoom 5-6 (already
@@ -43,30 +44,16 @@ export default function HomeMapBackground() {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    const container = containerRef.current;
-    let destroyed = false;
-    let controller: FlythroughController | null = null;
 
-    function playLoop() {
-      if (destroyed) return;
-      controller = new FlythroughController({
-        container,
-        waypoints: AMBIENT_WAYPOINTS,
-        reducedMotion: false,
-        onComplete: () => {
-          controller?.destroy();
-          playLoop();
-        },
-      });
-      void controller.play();
-    }
+    const controller = new FlythroughController({
+      container: containerRef.current,
+      waypoints: AMBIENT_WAYPOINTS,
+      reducedMotion: false,
+      loop: true,
+    });
+    void controller.play();
 
-    playLoop();
-
-    return () => {
-      destroyed = true;
-      controller?.destroy();
-    };
+    return () => controller.destroy();
   }, []);
 
   return (
