@@ -1,0 +1,128 @@
+/* src/ui/Home.css
+   IDLE scene ("conversation" landing screen, before Start/Discover is
+   clicked). Tokens only, no new color/font/spacing values — animation
+   durations reuse var(--motion-slow) as their base; the staggered
+   entrance delays (200ms/400ms) are new small values, but they're
+   choreography parameters, not design tokens (no other component needs to
+   reuse them), per user decision. */
+
+.home-screen {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  background: var(--bg-base);
+  overflow: hidden;
+}
+
+/* Reuses FlythroughController (HomeMapBackground.tsx) parked at a single
+   static waypoint — not a new map integration. Liberty (the only
+   OpenFreeMap style with visible relief at world zoom — Dark/Fiord were
+   compared and found too low-contrast by design, near-flat at every
+   zoom tested) inverted into a dark palette via CSS filter, since there
+   is no native dark style with real terrain detail. */
+.home-map-background {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.55)
+    contrast(1.1);
+  animation: home-map-drift 30s ease-in-out infinite;
+}
+
+@keyframes home-map-drift {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+/* rgba(20,16,12) is var(--bg-base) (#14100c) in rgb — not a new color,
+   just expressed with alpha, which custom properties can't carry
+   directly. mix-blend-mode: multiply darkens the (already inverted) map
+   further and unifies it with the rest of the screen's background. */
+.home-map-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to bottom,
+    rgba(20, 16, 12, 0.5),
+    rgba(20, 16, 12, 0.85)
+  );
+  mix-blend-mode: multiply;
+}
+
+/* Curtain-mask reveal: the outer element clips (overflow: hidden), the
+   inner .reveal-text slides up from fully hidden (translateY(100%)) to
+   its resting position. Title and tagline are each treated as a single
+   reveal unit — the tagline's line count already changes across
+   breakpoints (WAYREEL.md/ADR-030), so masking per rendered line would
+   need JS-measured line splitting, not requested here. */
+.reveal-mask {
+  display: block;
+  overflow: hidden;
+}
+
+.reveal-text {
+  display: block;
+  transform: translateY(100%);
+  animation: curtain-reveal var(--motion-slow) ease-out forwards;
+}
+
+@keyframes curtain-reveal {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.home-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.home-tagline {
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  text-align: center;
+  max-width: 360px;
+  margin: 0;
+}
+
+.home-tagline .reveal-text {
+  animation-delay: 200ms;
+}
+
+/* .btn-primary already sets its own base transition (hover/active/focus,
+   src/ui/buttons.css) — this only adds the entrance reveal on top, scoped
+   to the Home screen's button specifically. Kept as fade + translateY
+   (not curtain-mask) — only title/tagline were asked to switch. */
+.home-screen .btn-primary {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: home-reveal var(--motion-slow) ease-out forwards;
+  animation-delay: 400ms;
+}
+
+@keyframes home-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

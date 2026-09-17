@@ -1,0 +1,28 @@
+/* src/ui/buttons.css
+   Single shared button style, applied to every button in the app without
+   exception (Start, Send, Try again, Skip, I don't like it/Continue,
+   Alternative placeholder, New search) — tokens only, no new colors. */
+
+.btn-primary {
+  background: var(--accent);
+  color: var(--accent-text);
+  font-family: var(--font-body);
+  border: none;
+  border-radius: 8px;
+  transition:
+    opacity var(--motion-base),
+    transform var(--motion-base);
+}
+
+.btn-primary:hover {
+  opacity: 0.9;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

@@ -12,6 +12,7 @@
 // animation of its own).
 
 import { useEffect } from "react";
+import "./ReducedMotionFallback.css";
 
 export interface ReducedMotionFallbackProps {
   destinationId: string;
@@ -31,7 +32,7 @@ export default function ReducedMotionFallback({
       data-component="ReducedMotionFallback"
       data-destination-id={destinationId}
     >
-      <p>{destinationId}</p>
+      <p className="reduced-motion-fallback-name">{destinationId}</p>
     </div>
   );
 }

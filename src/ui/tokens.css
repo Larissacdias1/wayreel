@@ -2,7 +2,7 @@
 :root {
   /* Cor */
   --bg-base: #14100c;
-  --bg-surface: #1f1913;
+  --bg-surface: #2a221a;
   --text-primary: #f5efe6;
   --text-secondary: #a89a8a;
   --accent: #ffb37a;
@@ -42,4 +42,14 @@
     --text-lg: 26px;
     --text-md: 18px;
   }
+}
+
+/* Global background/text — without this, the app falls back to the
+   browser's default white background, since tokens.css only ever defined
+   the custom properties, never applied them anywhere. */
+html,
+body,
+#root {
+  background: var(--bg-base);
+  color: var(--text-primary);
 }

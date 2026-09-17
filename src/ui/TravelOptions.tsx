@@ -15,6 +15,7 @@
 // specific curved layout not specified anywhere.
 
 import type { FlightOption } from "../domain/types";
+import "./TravelOptions.css";
 
 const TIER_ORDER: FlightOption["tier"][] = [
   "economy",
@@ -40,6 +41,10 @@ export function orderFlightsByTier(flights: FlightOption[]): FlightOption[] {
 
 export interface TravelOptionsProps {
   flights: FlightOption[];
+  // Optional, same pattern as Flythrough's destinationName (#139) — not
+  // read from src/rag/destinations.ts here, keeping the UI decoupled from
+  // the RAG data source; falls back to not rendering a header if absent.
+  destinationName?: string;
   // "For cheaper lodging, consider X — why" (src/agent/nodes.ts's
   // buildAccommodationTip, from Destination.budget_neighborhood) — passed
   // in rather than looked up here, keeping the UI decoupled from RAG data.
@@ -48,37 +53,45 @@ export interface TravelOptionsProps {
 
 export default function TravelOptions({
   flights,
+  destinationName,
   accommodationTip,
 }: TravelOptionsProps) {
   const orderedFlights = orderFlightsByTier(flights);
 
   return (
     <div data-component="TravelOptions">
+      {destinationName && (
+        <h2 className="travel-options-header">{destinationName}</h2>
+      )}
+
       <div data-testid="flight-card-arc">
         {orderedFlights.map((flight) => (
           <div
             key={flight.id}
             data-testid="flight-card"
             data-tier={flight.tier}
+            className="flight-card"
             style={{ color: TIER_COLOR[flight.tier] }}
           >
-            <p>{flight.tier}</p>
-            <p>
+            <p className="flight-card-label">{flight.tier}</p>
+            <p className="flight-card-price">
               ${flight.price.total} {flight.price.currency}
             </p>
-            <p>{flight.airline.name}</p>
+            <p className="flight-card-label">{flight.airline.name}</p>
           </div>
         ))}
       </div>
 
       {/* docs/SECURITY.md Section 5 — copied verbatim, same text used in
           src/agent/nodes.ts's buildFinalMessage. */}
-      <p data-testid="price-disclaimer">
+      <p data-testid="price-disclaimer" className="travel-options-note">
         Indicative prices, subject to change. Verify at the time of purchase.
       </p>
 
       {accommodationTip && (
-        <p data-testid="accommodation-tip">{accommodationTip}</p>
+        <p data-testid="accommodation-tip" className="travel-options-note">
+          {accommodationTip}
+        </p>
       )}
     </div>
   );

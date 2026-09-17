@@ -5,4 +5,7 @@ module.exports = {
     "^.+\\.tsx?$": "@swc/jest",
   },
   testPathIgnorePatterns: ["/node_modules/", "/e2e/"],
+  moduleNameMapper: {
+    "\\.css$": "<rootDir>/jest.css-mock.cjs",
+  },
 };

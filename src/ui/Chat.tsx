@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { renderLightMarkdown } from "./markdown";
+import "./Chat.css";
 
 export const MAX_MESSAGE_LENGTH = 2000;
 
@@ -45,9 +46,17 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
 
   return (
     <div data-component="Chat">
-      <div ref={historyRef} data-testid="chat-history">
+      <div ref={historyRef} data-testid="chat-history" className="chat-history">
         {messages.map((message, index) => (
-          <div key={index} data-role={message.role}>
+          <div
+            key={index}
+            data-role={message.role}
+            className={
+              message.role === "assistant"
+                ? "chat-message-assistant"
+                : "chat-message-user"
+            }
+          >
             {message.role === "assistant"
               ? renderLightMarkdown(message.content)
               : message.content}
@@ -55,17 +64,22 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
         ))}
       </div>
 
-      <form onSubmit={handleSubmit}>
+      <form className="chat-form" onSubmit={handleSubmit}>
         <textarea
+          className="chat-textarea"
           value={draft}
           maxLength={MAX_MESSAGE_LENGTH}
           onChange={(event) => setDraft(event.target.value)}
           disabled={disabled}
         />
-        <span>
+        <span className="chat-char-counter">
           {draft.length}/{MAX_MESSAGE_LENGTH}
         </span>
-        <button type="submit" disabled={disabled || draft.trim().length === 0}>
+        <button
+          className="btn-primary"
+          type="submit"
+          disabled={disabled || draft.trim().length === 0}
+        >
           Send
         </button>
       </form>

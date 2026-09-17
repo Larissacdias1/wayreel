@@ -51,10 +51,12 @@ export default function Thinking({
       {timedOut ? (
         <>
           <p>Something took too long.</p>
-          <button onClick={onRetry}>Try again</button>
+          <button className="btn-primary" onClick={onRetry}>
+            Try again
+          </button>
         </>
       ) : (
-        <p>Finding your destination...</p>
+        <p className="thinking-status">Finding your destination...</p>
       )}
     </div>
   );

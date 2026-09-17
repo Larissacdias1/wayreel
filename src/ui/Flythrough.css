@@ -1,0 +1,11 @@
+/* src/ui/Flythrough.css
+   Visual composition rules applied per user spec — tokens only, no new
+   values (src/ui/tokens.css, ADR-028). */
+
+/* Color/font/border/radius/transition now come from the shared
+   .btn-primary class (src/ui/buttons.css) — only positioning stays here. */
+.flythrough-skip-button {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+}

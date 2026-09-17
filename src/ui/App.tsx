@@ -21,6 +21,8 @@ import {
 } from "./experience-state";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
 import Thinking from "./Thinking";
+import "./Home.css";
+import HomeMapBackground from "./HomeMapBackground";
 import Chat, { type ChatMessage } from "./Chat";
 import Flythrough from "./Flythrough";
 import TravelOptions from "./TravelOptions";
@@ -69,8 +71,28 @@ export default function App() {
   switch (scene.type) {
     case "IDLE":
       return (
-        <div data-scene="IDLE">
-          <button onClick={() => dispatch({ type: "START" })}>Start</button>
+        <div className="home-screen" data-scene="IDLE">
+          <HomeMapBackground />
+          <div className="home-map-overlay" />
+          <h1 className="home-title">
+            <span className="reveal-mask">
+              <span className="reveal-text">Wayreel</span>
+            </span>
+          </h1>
+          <p className="home-tagline">
+            <span className="reveal-mask">
+              <span className="reveal-text">
+                Tell me what you&apos;re looking for. I&apos;ll show you where
+                to go.
+              </span>
+            </span>
+          </p>
+          <button
+            className="btn-primary"
+            onClick={() => dispatch({ type: "START" })}
+          >
+            Discover
+          </button>
         </div>
       );
 
@@ -105,10 +127,16 @@ export default function App() {
     case "REVEAL":
       return (
         <div data-scene="REVEAL">
-          <button onClick={() => dispatch({ type: "REJECT_DESTINATION" })}>
+          <button
+            className="btn-primary"
+            onClick={() => dispatch({ type: "REJECT_DESTINATION" })}
+          >
             I don&apos;t like it, show another
           </button>
-          <button onClick={() => dispatch({ type: "SCROLL_TO_OPTIONS" })}>
+          <button
+            className="btn-primary"
+            onClick={() => dispatch({ type: "SCROLL_TO_OPTIONS" })}
+          >
             Continue
           </button>
         </div>
@@ -118,6 +146,7 @@ export default function App() {
       return (
         <div data-scene="ALTERNATIVE">
           <button
+            className="btn-primary"
             onClick={() =>
               dispatch({ type: "ALTERNATIVE_READY", destinationId: "mardin" })
             }
@@ -130,8 +159,15 @@ export default function App() {
     case "OPTIONS":
       return (
         <div data-scene="OPTIONS">
-          <TravelOptions flights={flights} accommodationTip={null} />
-          <button onClick={() => dispatch({ type: "SCROLL_TO_CTA" })}>
+          <TravelOptions
+            flights={flights}
+            destinationName={scene.destinationId}
+            accommodationTip={null}
+          />
+          <button
+            className="btn-primary"
+            onClick={() => dispatch({ type: "SCROLL_TO_CTA" })}
+          >
             Continue
           </button>
         </div>
@@ -140,7 +176,10 @@ export default function App() {
     case "CTA":
       return (
         <div data-scene="CTA">
-          <button onClick={() => dispatch({ type: "NEW_SEARCH" })}>
+          <button
+            className="btn-primary"
+            onClick={() => dispatch({ type: "NEW_SEARCH" })}
+          >
             New search
           </button>
         </div>

@@ -26,6 +26,7 @@ import { FlythroughController } from "../cinematic/motion/playback-controller";
 import HudOverlay from "../cinematic/components/HudOverlay";
 import ReducedMotionFallback from "../cinematic/components/ReducedMotionFallback";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
+import "./Flythrough.css";
 
 const SKIP_BUTTON_DELAY_MS = 3000;
 
@@ -104,14 +105,11 @@ export default function Flythrough({
         destinationName={destinationName ?? destinationId}
       />
       <button
+        className="btn-primary flythrough-skip-button"
         onClick={handleSkip}
         style={{
-          position: "absolute",
-          bottom: 0,
-          right: 0,
           opacity: showSkip ? 1 : 0,
           pointerEvents: showSkip ? "auto" : "none",
-          transition: "opacity 400ms",
         }}
       >
         Skip

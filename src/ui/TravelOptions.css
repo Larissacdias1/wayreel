@@ -1,0 +1,27 @@
+/* src/ui/TravelOptions.css
+   Visual composition rules applied per user spec — tokens only, no new
+   values (src/ui/tokens.css, ADR-028). */
+
+.travel-options-header {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+}
+
+.flight-card {
+  border-radius: 12px;
+  background: var(--bg-surface);
+  padding: var(--space-3);
+}
+
+.flight-card-price {
+  font-family: var(--font-mono);
+}
+
+.flight-card-label {
+  font-family: var(--font-body);
+}
+
+.travel-options-note {
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+}

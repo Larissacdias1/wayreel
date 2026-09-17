@@ -4,14 +4,14 @@ Authorial synthesis based on docs/VISUAL_REFERENCES.md (not a copy of any single
 
 ## Color
 
-| Token          | Value   | Use                                                                                                            |
-| -------------- | ------- | -------------------------------------------------------------------------------------------------------------- |
-| bg-base        | #14100c | main background (near-black, warm bias)                                                                        |
-| bg-surface     | #1f1913 | cards/panels, one step above the background                                                                    |
-| text-primary   | #f5efe6 | main text (warm white)                                                                                         |
-| text-secondary | #a89a8a | supporting text                                                                                                |
-| accent         | #ffb37a | CTA/highlight — same value as the ambient light already frozen in Section 11 (map.setLight), reused on purpose |
-| accent-text    | #14100c | text on top of the accent background                                                                           |
+| Token          | Value   | Use                                                                                                                |
+| -------------- | ------- | ------------------------------------------------------------------------------------------------------------------ |
+| bg-base        | #14100c | main background (near-black, warm bias)                                                                            |
+| bg-surface     | #2a221a | cards/panels, one step above the background (revised from #1f1913 — Option B, confirmed via visual contrast check) |
+| text-primary   | #f5efe6 | main text (warm white)                                                                                             |
+| text-secondary | #a89a8a | supporting text                                                                                                    |
+| accent         | #ffb37a | CTA/highlight — same value as the ambient light already frozen in Section 11 (map.setLight), reused on purpose     |
+| accent-text    | #14100c | text on top of the accent background                                                                               |
 
 ## Typography
 
