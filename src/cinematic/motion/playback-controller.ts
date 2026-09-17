@@ -44,9 +44,19 @@ export type MapFactory = (
 // would make Jest fail to load this file entirely (jest.config.cjs's
 // "node" test environment has no WebGL context anyway, and tests always
 // inject their own mapFactory, never reaching this function).
+//
+// Bug found during Home duotone work: this used to resolve as soon as the
+// Map constructor returned, before the style finished loading. MapLibre's
+// own "load" event hadn't fired yet, so play()'s first flyTo() ran against
+// a map whose style/transform wasn't ready — the style's own default view
+// (center [0,0], zoom ~0.64 for Liberty) then applied on top once loading
+// actually finished, silently discarding that flyTo. Waiting for "load"
+// (the documented MapLibre/Mapbox GL pattern for "camera commands issued
+// before load are lost") before resolving fixes both the real destination
+// flythrough and this Home background — same shared class, same bug.
 const defaultMapFactory: MapFactory = async (container) => {
   const { Map: MapLibreMap } = await import("maplibre-gl");
-  return new MapLibreMap({
+  const map = new MapLibreMap({
     container,
     style: MAP_STYLE_URL,
     // Section 11.2 — "attributionControl: true — mandatory (OSM license)".
@@ -54,7 +64,20 @@ const defaultMapFactory: MapFactory = async (container) => {
     // it is the default), so an empty options object is the explicit "on".
     attributionControl: {},
     interactive: false,
-  }) as unknown as FlythroughMap;
+    // MapLibre's default maxPitch is 60°, never configured before — Section
+    // 11.1's frozen Setenil waypoint 2 uses pitch: 70°, which was silently
+    // clamped to 60° (confirmed live during #136 re-verification). 85° is
+    // MapLibre's own real ceiling, not an arbitrary new number.
+    maxPitch: 85,
+  });
+  await new Promise<void>((resolve) => {
+    if (map.loaded()) {
+      resolve();
+    } else {
+      map.once("load", () => resolve());
+    }
+  });
+  return map as unknown as FlythroughMap;
 };
 
 export type PlaybackState =
