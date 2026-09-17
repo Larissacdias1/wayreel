@@ -18,45 +18,33 @@
   overflow: hidden;
 }
 
-/* Reuses FlythroughController (HomeMapBackground.tsx) parked at a single
-   static waypoint — not a new map integration. Liberty (the only
+/* Reuses FlythroughController (HomeMapBackground.tsx) with a wide, slow,
+   looping set of waypoints — not a new map integration. Liberty (the only
    OpenFreeMap style with visible relief at world zoom — Dark/Fiord were
    compared and found too low-contrast by design, near-flat at every
-   zoom tested) inverted into a dark palette via CSS filter, since there
-   is no native dark style with real terrain detail. */
+   zoom tested), stripped to grayscale (relief/luminance only, no original
+   color) and re-tinted via the overlay below — replaces the earlier
+   invert+hue-rotate trick, whose exact resulting hue was hard to predict.
+   Camera movement is real (waypoints), not a CSS scale drift — see
+   HomeMapBackground.tsx. */
 .home-map-background {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  filter: invert(1) hue-rotate(180deg) saturate(0.3) brightness(0.55)
-    contrast(1.1);
-  animation: home-map-drift 30s ease-in-out infinite;
+  filter: grayscale(1) contrast(1.6) brightness(0.4);
 }
 
-@keyframes home-map-drift {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.08);
-  }
-}
-
-/* rgba(20,16,12) is var(--bg-base) (#14100c) in rgb — not a new color,
-   just expressed with alpha, which custom properties can't carry
-   directly. mix-blend-mode: multiply darkens the (already inverted) map
-   further and unifies it with the rest of the screen's background. */
+/* Duotone: mix-blend-mode: color takes the overlay's hue/saturation and
+   applies it on top of the grayscale map's luminance — the diagonal
+   gradient uses only the two already-frozen brand colors (--bg-base,
+   --accent), no new value. */
 .home-map-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(20, 16, 12, 0.5),
-    rgba(20, 16, 12, 0.85)
-  );
-  mix-blend-mode: multiply;
+  background: linear-gradient(135deg, var(--bg-base), var(--accent));
+  mix-blend-mode: color;
+  opacity: 0.85;
 }
 
 /* Curtain-mask reveal: the outer element clips (overflow: hidden), the
