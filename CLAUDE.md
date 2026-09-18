@@ -18,6 +18,7 @@ Source of truth for product/architecture: `WAYREEL.md`. Do not duplicate its con
 - `npm run typecheck`
 - `npm run eval` — agent eval harness (`docs/EVAL_HARNESS.md`)
 - `npm run test:e2e` / `npm run test:e2e:ci` — Playwright (`docs/PLAYWRIGHT.md`)
+- Development requires BOTH `npm run dev` (frontend, port 5173) AND `npm run server` (API, port 3000) running simultaneously — the Vite proxy routes `/api/*` between them. Running only `npm run dev` will fail all chat interactions with 404.
 
 ## Conventions
 
