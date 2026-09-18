@@ -3,8 +3,21 @@
    values (src/ui/tokens.css, ADR-028). */
 
 [data-component="Chat"] {
+  position: relative;
   max-width: 640px;
   margin: 0 auto;
+}
+
+/* Cursor-tracking spotlight — base positioning/visibility in
+   effects.css's .cursor-spotlight; only colour/opacity/radius here.
+   Same accent tone as Home's .home-spotlight, at a smaller radius and
+   lower opacity — this surface has less "stuff" to reveal. */
+.chat-spotlight {
+  background: radial-gradient(
+    circle 200px at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(255, 179, 122, 0.1),
+    transparent 70%
+  );
 }
 
 .chat-history {

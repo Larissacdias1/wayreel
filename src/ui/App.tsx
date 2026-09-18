@@ -24,6 +24,7 @@ import {
   initialExperienceScene,
 } from "./experience-state";
 import { usePrefersReducedMotion } from "./use-prefers-reduced-motion";
+import { useCursorSpotlight } from "./use-cursor-spotlight";
 import SceneTransition from "./SceneTransition";
 import Thinking from "./Thinking";
 import "./Home.css";
@@ -36,6 +37,7 @@ import type { FlightOption } from "../domain/types";
 
 export default function App() {
   const reducedMotion = usePrefersReducedMotion();
+  const homeSpotlightRef = useCursorSpotlight<HTMLDivElement>();
   const [scene, dispatch] = useReducer(
     createExperienceReducer(reducedMotion),
     initialExperienceScene,
@@ -77,10 +79,12 @@ export default function App() {
     switch (scene.type) {
       case "IDLE":
         return (
-          <div className="home-screen" data-scene="IDLE">
+          <div className="home-screen" data-scene="IDLE" ref={homeSpotlightRef}>
             <HomeMapBackground />
             <div className="home-map-overlay" />
             <div className="home-text-backdrop" />
+            <div className="cursor-spotlight home-spotlight" />
+            <div className="grain-overlay" />
             <h1 className="home-title">
               <span className="reveal-mask">
                 <span className="reveal-text">Wayreel</span>

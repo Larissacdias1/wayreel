@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { renderLightMarkdown } from "./markdown";
+import { useCursorSpotlight } from "./use-cursor-spotlight";
 import "./Chat.css";
 
 export const MAX_MESSAGE_LENGTH = 2000;
@@ -28,6 +29,7 @@ export interface ChatProps {
 export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
   const [draft, setDraft] = useState("");
   const historyRef = useRef<HTMLDivElement>(null);
+  const spotlightRef = useCursorSpotlight<HTMLDivElement>();
 
   // Auto-scroll to the latest message.
   useEffect(() => {
@@ -45,7 +47,9 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
   }
 
   return (
-    <div data-component="Chat">
+    <div data-component="Chat" ref={spotlightRef}>
+      <div className="cursor-spotlight chat-spotlight" />
+      <div className="grain-overlay" />
       <div ref={historyRef} data-testid="chat-history" className="chat-history">
         {messages.map((message, index) => (
           <div
@@ -57,9 +61,15 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
                 : "chat-message-user"
             }
           >
-            {message.role === "assistant"
-              ? renderLightMarkdown(message.content)
-              : message.content}
+            {message.role === "assistant" ? (
+              <span className="reveal-mask">
+                <span className="reveal-text">
+                  {renderLightMarkdown(message.content)}
+                </span>
+              </span>
+            ) : (
+              message.content
+            )}
           </div>
         ))}
       </div>

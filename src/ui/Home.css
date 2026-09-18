@@ -64,30 +64,23 @@
   opacity: 0.55;
 }
 
-/* Curtain-mask reveal: the outer element clips (overflow: hidden), the
-   inner .reveal-text slides up from fully hidden (translateY(100%)) to
-   its resting position. Title and tagline are each treated as a single
+/* Curtain-mask reveal (.reveal-mask/.reveal-text/@keyframes curtain-reveal)
+   now lives in effects.css, shared with Chat's assistant-message reveal —
+   not duplicated here. Title and tagline are each treated as a single
    reveal unit — the tagline's line count already changes across
    breakpoints (WAYREEL.md/ADR-030), so masking per rendered line would
    need JS-measured line splitting, not requested here. */
-.reveal-mask {
-  display: block;
-  overflow: hidden;
-}
 
-.reveal-text {
-  display: block;
-  transform: translateY(100%);
-  animation: curtain-reveal var(--motion-slow) ease-out forwards;
-}
-
-@keyframes curtain-reveal {
-  from {
-    transform: translateY(100%);
-  }
-  to {
-    transform: translateY(0);
-  }
+/* Cursor-tracking spotlight — base positioning/visibility in
+   effects.css's .cursor-spotlight; only colour/opacity/radius here.
+   rgba(255,179,122) is var(--accent) (#ffb37a) expressed with alpha, not
+   a new color — same convention as Home's duotone overlay. */
+.home-spotlight {
+  background: radial-gradient(
+    circle 260px at var(--cursor-x, 50%) var(--cursor-y, 50%),
+    rgba(255, 179, 122, 0.18),
+    transparent 70%
+  );
 }
 
 .home-title {

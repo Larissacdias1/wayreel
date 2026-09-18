@@ -5,6 +5,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import App from "./ui/App";
 import "./ui/tokens.css";
 import "./ui/buttons.css";
+import "./ui/effects.css";
 
 // MapLibre GL JS v6+ docs (v5-to-v6-migration-guide.md, "setWorkerUrl() is
 // bundler-only"): with a bundler, the worker URL can't be auto-detected via

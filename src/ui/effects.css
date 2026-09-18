@@ -1,0 +1,61 @@
+/* src/ui/effects.css
+   Shared visual layers reused across screens — one definition, not
+   duplicated per component (Home + Chat). Tokens only, no new values
+   beyond the noise SVG and spotlight radii/opacity, which have no token
+   equivalent and are treated as choreography parameters, same precedent
+   as Home's entrance-animation delays. */
+
+/* Curtain-mask reveal: the outer element clips (overflow: hidden), the
+   inner .reveal-text slides up from fully hidden (translateY(100%)) to
+   its resting position. Originally Home's title/tagline entrance; reused
+   as-is (moved here, not duplicated) for Chat's assistant messages. */
+.reveal-mask {
+  display: block;
+  overflow: hidden;
+}
+
+.reveal-text {
+  display: block;
+  transform: translateY(100%);
+  animation: curtain-reveal var(--motion-slow) ease-out forwards;
+}
+
+@keyframes curtain-reveal {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Cursor-tracking spotlight base — colour/opacity/radius are set per
+   screen (Home.css's .home-spotlight, Chat.css's .chat-spotlight) since
+   they differ; positioning/visibility rules are identical everywhere.
+   --cursor-x/--cursor-y are set by use-cursor-spotlight.ts on the
+   container this layer sits inside. */
+.cursor-spotlight {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Touch/coarse-pointer devices have no cursor to track — no fixed glow
+   substitute either, since a static glow tied to no input reads as a
+   design mistake, not an effect. */
+@media (hover: none), (pointer: coarse) {
+  .cursor-spotlight {
+    display: none;
+  }
+}
+
+/* Subtle film-grain texture, shared so both screens read as the same
+   surface. Inline SVG feTurbulence, no new asset/dependency. */
+.grain-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.035;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
