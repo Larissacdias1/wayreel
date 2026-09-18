@@ -18,7 +18,7 @@
 // wrapper (per user decision) — individual scene components know nothing
 // about this transition.
 
-import { useReducer, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import {
   createExperienceReducer,
   initialExperienceScene,
@@ -45,13 +45,22 @@ export default function App() {
   const [sessionId] = useState(() => crypto.randomUUID());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [flights, setFlights] = useState<FlightOption[]>([]);
+  // Tracks the in-flight sendMessage() call so a THINKING timeout can
+  // actually cancel it — without this, a slow response that arrives after
+  // the user already saw "try again" (and possibly retried or sent a new
+  // message) would still resolve and silently change scene state out from
+  // under them. See WAYREEL.md Section 7's THINKING_TIMEOUT_MS correction.
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   async function handleSendMessage(text: string) {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     dispatch({ type: "MESSAGE_SENT" });
 
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     try {
-      const payload = await sendMessage(sessionId, text);
+      const payload = await sendMessage(sessionId, text, controller.signal);
       setMessages((prev) => [...prev, payload.message]);
       setFlights(payload.flights);
 
@@ -68,11 +77,19 @@ export default function App() {
         dispatch({ type: "CLARIFICATION_NEEDED" });
       }
     } catch {
-      // Network/SSE failure: no response ever arrived, so this reuses the
-      // existing timeout/retry path (Section 7 rule 4) rather than
-      // inventing a separate network-error event.
+      // An abort means handleThinkingTimeout already dispatched
+      // THINKING_TIMEOUT and closed this request out — nothing left to do.
+      // Any other rejection (a real network/SSE failure, response arrived
+      // but broken) reuses the same timeout/retry path (Section 7 rule 4)
+      // rather than inventing a separate network-error event.
+      if (controller.signal.aborted) return;
       dispatch({ type: "THINKING_TIMEOUT" });
     }
+  }
+
+  function handleThinkingTimeout() {
+    abortControllerRef.current?.abort();
+    dispatch({ type: "THINKING_TIMEOUT" });
   }
 
   function renderScene() {
@@ -119,7 +136,7 @@ export default function App() {
           <div data-scene="THINKING">
             <Thinking
               timedOut={scene.timedOut}
-              onTimeout={() => dispatch({ type: "THINKING_TIMEOUT" })}
+              onTimeout={handleThinkingTimeout}
               onRetry={() => dispatch({ type: "RETRY" })}
             />
           </div>

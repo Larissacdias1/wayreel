@@ -34,6 +34,7 @@ describe("sendMessage (#142 — POST /api/chat + GET /api/stream via EventSource
     const promise = sendMessage(
       "session-1",
       "hello",
+      undefined,
       eventSourceFactory as never,
     );
     await flushMicrotasks();
@@ -42,6 +43,7 @@ describe("sendMessage (#142 — POST /api/chat + GET /api/stream via EventSource
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: "hello", session_id: "session-1" }),
+      signal: undefined,
     });
     expect(eventSourceFactory).toHaveBeenCalledWith(
       "/api/stream?session_id=session-1",
@@ -83,6 +85,7 @@ describe("sendMessage (#142 — POST /api/chat + GET /api/stream via EventSource
     const promise = sendMessage(
       "session-1",
       "hello",
+      undefined,
       eventSourceFactory as never,
     );
     await flushMicrotasks();
@@ -90,5 +93,58 @@ describe("sendMessage (#142 — POST /api/chat + GET /api/stream via EventSource
 
     await expect(promise).rejects.toThrow("GET /api/stream connection error");
     expect(fakeEventSource.close).toHaveBeenCalledTimes(1);
+  });
+
+  it("closes the EventSource and rejects when aborted after the stream opened — a late server response must never resolve", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+    } as Response) as unknown as typeof fetch;
+
+    const fakeEventSource = createFakeEventSource();
+    const eventSourceFactory = jest.fn().mockReturnValue(fakeEventSource);
+    const controller = new AbortController();
+
+    const promise = sendMessage(
+      "session-1",
+      "hello",
+      controller.signal,
+      eventSourceFactory as never,
+    );
+    await flushMicrotasks();
+
+    controller.abort();
+    await expect(promise).rejects.toThrow("Aborted");
+    expect(fakeEventSource.close).toHaveBeenCalledTimes(1);
+
+    // The stale response arrives anyway (e.g. a slow Gemini call finishing
+    // after the client gave up) — it must be a no-op, not a second
+    // resolve/reject on an already-settled promise.
+    fakeEventSource.onmessage?.({
+      data: JSON.stringify({
+        message: { role: "assistant", content: "too late" },
+        destinationId: null,
+        flights: [],
+        error: null,
+        clarificationNeeded: false,
+      }),
+    });
+    await expect(promise).rejects.toThrow("Aborted");
+  });
+
+  it("rejects immediately without opening an EventSource when the signal is already aborted", async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: true,
+      status: 202,
+    } as Response) as unknown as typeof fetch;
+
+    const eventSourceFactory = jest.fn();
+    const controller = new AbortController();
+    controller.abort();
+
+    await expect(
+      sendMessage("session-1", "hello", controller.signal, eventSourceFactory),
+    ).rejects.toThrow("Aborted");
+    expect(eventSourceFactory).not.toHaveBeenCalled();
   });
 });

@@ -8,7 +8,13 @@
 // props) — wiring it into ui/App.tsx's CHATTING scene with real message
 // state happens during SSE integration (#142), not here.
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
 import { renderLightMarkdown } from "./markdown";
 import { useCursorSpotlight } from "./use-cursor-spotlight";
 import "./Chat.css";
@@ -29,6 +35,7 @@ export interface ChatProps {
 export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
   const [draft, setDraft] = useState("");
   const historyRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
   const spotlightRef = useCursorSpotlight<HTMLDivElement>();
 
   // Auto-scroll to the latest message.
@@ -44,6 +51,16 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
     if (!trimmed || disabled) return;
     onSendMessage(trimmed);
     setDraft("");
+  }
+
+  // Enter sends (same path as clicking Send — requestSubmit() runs
+  // handleSubmit, including its disabled/empty-draft guard); Shift+Enter
+  // still inserts a newline, the textarea's native behavior.
+  function handleKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      formRef.current?.requestSubmit();
+    }
   }
 
   return (
@@ -74,12 +91,13 @@ export default function Chat({ messages, onSendMessage, disabled }: ChatProps) {
         ))}
       </div>
 
-      <form className="chat-form" onSubmit={handleSubmit}>
+      <form className="chat-form" ref={formRef} onSubmit={handleSubmit}>
         <textarea
           className="chat-textarea"
           value={draft}
           maxLength={MAX_MESSAGE_LENGTH}
           onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={disabled}
         />
         <span className="chat-char-counter">

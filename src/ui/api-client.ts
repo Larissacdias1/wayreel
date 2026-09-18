@@ -28,12 +28,14 @@ const defaultEventSourceFactory: EventSourceFactory = (url) =>
 export async function sendMessage(
   sessionId: string,
   message: string,
+  signal?: AbortSignal,
   eventSourceFactory: EventSourceFactory = defaultEventSourceFactory,
 ): Promise<StreamPayload> {
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, session_id: sessionId }),
+    signal,
   });
 
   if (!response.ok) {
@@ -41,12 +43,36 @@ export async function sendMessage(
   }
 
   return new Promise<StreamPayload>((resolve, reject) => {
+    // Checked before opening the EventSource — fetch() above already
+    // throws on an aborted signal in practice, but this stays correct
+    // (and avoids an unnecessary connection) even if that ever changes.
+    if (signal?.aborted) {
+      reject(new DOMException("Aborted", "AbortError"));
+      return;
+    }
+
     const eventSource = eventSourceFactory(
       `/api/stream?session_id=${sessionId}`,
     );
 
-    eventSource.onmessage = (event) => {
+    // A stale response (arriving after THINKING's timeout already fired and
+    // the caller aborted) must never resolve/reject into UI state the user
+    // has already navigated away from — closing the EventSource here is
+    // what actually stops that, not just ignoring the eventual result.
+    function cleanup() {
       eventSource.close();
+      signal?.removeEventListener("abort", onAbort);
+    }
+
+    function onAbort() {
+      cleanup();
+      reject(new DOMException("Aborted", "AbortError"));
+    }
+
+    signal?.addEventListener("abort", onAbort);
+
+    eventSource.onmessage = (event) => {
+      cleanup();
       try {
         resolve(JSON.parse(event.data) as StreamPayload);
       } catch (err) {
@@ -55,7 +81,7 @@ export async function sendMessage(
     };
 
     eventSource.onerror = () => {
-      eventSource.close();
+      cleanup();
       reject(new Error("GET /api/stream connection error"));
     };
   });

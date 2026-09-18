@@ -554,8 +554,8 @@ IDLE (landing page)
 CHATTING (chat open, user in control)
   └── message sent ──► THINKING
 
-THINKING (short autoplay, max 3s, guaranteed timeout)
-  ├── 3s timeout ──► "try again" fallback
+THINKING (short autoplay, max 20s, guaranteed timeout)
+  ├── 20s timeout ──► "try again" fallback
   └── agent decides on a destination ──► FLYTHROUGH
 
 FLYTHROUGH (autoplay, CAMERA_PATH timeline, 12s)
@@ -581,7 +581,7 @@ Fundamental rules:
 1. Each scene has ONE single control mode — never scroll-driven + autoplay simultaneously
 2. Scroll-driven ONLY in REVEAL and OPTIONS
 3. Autoplay ONLY in THINKING, FLYTHROUGH, and ALTERNATIVE
-4. THINKING has a hard 3s timeout — if exceeded, shows an error state with retry
+4. THINKING has a hard 20s timeout — if exceeded, shows an error state with retry. **Correction**: originally specified as 3s, which turned out to be minimal-loading-feedback timing, not the real pipeline duration. Measured directly via 5 real Chat UI round trips (Send click → on-screen response), full pipeline (extractIntent + retrieveContext + recommendDestination, each calling Gemini): 7.9s, 8.2s, 9.0s, 12.4s, and 15.7s (the destination-decision turn, the heaviest) — consistent with docs/EVAL_HARNESS.md's eval-10 "< 15s total" ceiling. 3s caused every real conversation to hit "try again" while the actual response was still in flight and would land moments later, silently changing scene state out from under the user. 20s gives margin above the observed 15.7s max.
 5. The skip button appears in FLYTHROUGH after 3 seconds
 6. prefers-reduced-motion: skips straight to REVEAL with static cards
 7. "I don't like it" fallback available in REVEAL — triggers the recommendAlternative node in the graph
